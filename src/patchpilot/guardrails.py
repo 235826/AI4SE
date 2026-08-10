@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import re
 
 from patchpilot.models import Action
 
@@ -36,6 +37,12 @@ class GuardrailPolicy:
                 decision = self._check_path(str(raw_path))
                 if not decision.allowed:
                     return decision
+            elif action.type == "apply_patch":
+                patch = str(action.args.get("patch", ""))
+                for raw_path in re.findall(r"^\+\+\+ b/(.+)$", patch, re.MULTILINE):
+                    decision = self._check_path(raw_path.split("\t", 1)[0])
+                    if not decision.allowed:
+                        return decision
 
         if action.type == "run_tests":
             return self._check_command(str(action.args.get("command", "")))
@@ -49,7 +56,7 @@ class GuardrailPolicy:
         if not (resolved == workspace or workspace in resolved.parents):
             return RiskDecision(False, "high", f"path outside workspace: {raw_path}")
 
-        parts = set(path.parts)
+        parts = {part.lower() for part in path.parts}
         lowered = raw_path.lower()
         if parts & SENSITIVE_PARTS:
             return RiskDecision(False, "high", f"sensitive path blocked: {raw_path}")
@@ -60,11 +67,16 @@ class GuardrailPolicy:
         return RiskDecision(True, "low", "path allowed")
 
     def _check_command(self, command: str) -> RiskDecision:
-        if any(pattern in command for pattern in DANGEROUS_COMMANDS):
+        normalized = " ".join(command.lower().split())
+        dangerous = tuple(" ".join(pattern.split()) for pattern in DANGEROUS_COMMANDS)
+        if any(pattern in normalized for pattern in dangerous):
             return RiskDecision(False, "high", f"dangerous command blocked: {command}")
         parts = command.split()
         if not parts or parts[0] != "pytest":
             return RiskDecision(False, "high", f"command outside allowlist: {command}")
+        allowed_flags = {"-q", "-v", "--maxfail=1"}
+        if any(part not in allowed_flags and not part.startswith("tests/") for part in parts[1:]):
+            return RiskDecision(False, "high", f"command argument outside allowlist: {command}")
         if self.interactive_approval and "--maxfail=1" in parts:
             return RiskDecision(True, "medium", "pytest maxfail changes run behavior", True)
         return RiskDecision(True, "low", "pytest command allowed")
