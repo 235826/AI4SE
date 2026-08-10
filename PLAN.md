@@ -540,6 +540,8 @@ git commit -m "feat: add jsonl memory store"
 
 ### Task 5: LLM Provider 抽象与 MockLLM
 
+完成提交：`822cdb7`
+
 **Files:**
 - Create: `src/patchpilot/llm.py`
 - Test: `tests/test_llm.py`
@@ -550,7 +552,7 @@ git commit -m "feat: add jsonl memory store"
 - Produces: `MockLLM(actions: list[Action])`
 - Produces: `OpenAILLM(api_key: str, model: str = "gpt-4.1-mini")`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_llm.py
@@ -578,23 +580,23 @@ def test_openai_llm_requires_api_key():
         OpenAILLM(api_key="")
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_llm.py -v`
 
 Expected: FAIL with `ModuleNotFoundError: No module named 'patchpilot.llm'`.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Create `src/patchpilot/llm.py`. `OpenAILLM.next_action` should import `openai` lazily and raise `RuntimeError("OpenAI provider is not implemented for offline tests")` until Task 11 wires optional behavior.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/test_llm.py -v`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/patchpilot/llm.py tests/test_llm.py
