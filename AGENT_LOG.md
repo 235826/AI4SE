@@ -45,9 +45,9 @@
 - 时间：2026-08-10
 - skill：`superpowers:verification-before-completion`
 - prompt/context：依据 `task-13-brief.md` 核对完整提交历史，记录反思，更新任务状态，并执行测试、镜像构建、凭据扫描和差异检查。
-- result：在创建 `REFLECTION.md` 前保留 `test -f REFLECTION.md` 退出码 `1` 的红灯证据；Task 1-12 的提交均可解析，Task 13 的验收结果在最终报告中归档。
+- result：在创建 `REFLECTION.md` 前保留 `test -f REFLECTION.md` 退出码 `1` 的红灯证据；Task 1-12 的提交均可解析，Task 13 由 `e5c7ba7` 完成。最终复验中，`make test` 为 `68 passed`，`docker build -t patchpilot .` 成功，`git diff --check` 通过。原始 brief 扫描 `rg -n "OPENAI_API_KEY=sk-|sk-[A-Za-z0-9]" .` 命中测试占位、计划命令和过程文档示例，不能作为真实泄露判定；`rg -n --hidden --glob '!.git/**' 'sk-[A-Za-z0-9_-]{32,}' .` 无匹配（`rg` 退出码 `1`），未发现真实长度凭据。
 - human intervention：无。
-- lesson：最终文档应把提交可追溯性、验证命令和安全扫描结果放在同一证据链中，避免以口头结论替代可复现检查。
+- lesson：最终文档应把提交可追溯性、验证命令和安全扫描结果放在同一证据链中；宽泛模式的示例命中必须用更精确的长度规则复核，避免以口头结论替代可复现检查。
 
 ## 后续任务追加格式
 
