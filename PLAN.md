@@ -407,6 +407,8 @@ git commit -m "feat: add guardrail policy"
 
 ### Task 3: Pytest Feedback Sensor
 
+完成提交：`ace610c`
+
 **Files:**
 - Create: `src/patchpilot/feedback.py`
 - Test: `tests/test_feedback.py`
@@ -416,7 +418,7 @@ git commit -m "feat: add guardrail policy"
 - Produces: `parse_pytest_result(result: ToolResult) -> Feedback`
 - Produces: `timeout_feedback(command: str) -> Feedback`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_feedback.py
@@ -449,23 +451,23 @@ def test_timeout_feedback_is_not_passed():
     assert "timeout" in feedback.summary
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_feedback.py -v`
 
 Expected: FAIL with `ModuleNotFoundError: No module named 'patchpilot.feedback'`.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Create `src/patchpilot/feedback.py` with regex parsing for `(\d+) passed`, `(\d+) failed`, `(\d+) error`, and `FAILED <nodeid>`.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/test_feedback.py -v`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/patchpilot/feedback.py tests/test_feedback.py
