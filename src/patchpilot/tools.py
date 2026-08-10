@@ -126,11 +126,13 @@ class ToolDispatcher:
         return new_path, lines[2:]
 
     def _apply_hunks(self, original: str, patch_lines: list[str]) -> str:
-        source = original.splitlines()
-        result: list[str] = []
+        source = [
+            (line.removesuffix("\n"), line.endswith("\n"))
+            for line in original.splitlines(keepends=True)
+        ]
+        result: list[tuple[str, bool]] = []
         cursor = 0
         index = 0
-        trailing_newline = original.endswith("\n")
         while index < len(patch_lines):
             header = _HUNK_HEADER.match(patch_lines[index])
             if header is None:
@@ -157,38 +159,34 @@ class ToolDispatcher:
                     if previous_kind is None:
                         raise ValueError("invalid no-newline marker")
                     if previous_kind in {" ", "+"}:
-                        trailing_newline = False
+                        text, _ = result[-1]
+                        result[-1] = (text, False)
                     index += 1
                     continue
                 if not line or line[0] not in " +-":
                     raise ValueError("invalid unified diff line")
                 text = line[1:]
                 if line[0] == " ":
-                    if cursor >= len(source) or source[cursor] != text:
+                    if cursor >= len(source) or source[cursor][0] != text:
                         raise ValueError("patch context does not match file")
-                    result.append(text)
+                    result.append(source[cursor])
                     cursor += 1
                     removed += 1
                     added += 1
-                    if cursor == len(source):
-                        trailing_newline = original.endswith("\n")
                 elif line[0] == "-":
-                    if cursor >= len(source) or source[cursor] != text:
+                    if cursor >= len(source) or source[cursor][0] != text:
                         raise ValueError("patch removal does not match file")
                     cursor += 1
                     removed += 1
                 else:
-                    result.append(text)
+                    result.append((text, True))
                     added += 1
-                    trailing_newline = True
                 previous_kind = line[0]
                 index += 1
             if removed != old_count or added != new_count:
                 raise ValueError("hunk line counts do not match header")
         result.extend(source[cursor:])
-        if cursor < len(source):
-            trailing_newline = original.endswith("\n")
-        return "\n".join(result) + ("\n" if result and trailing_newline else "")
+        return "".join(text + ("\n" if has_newline else "") for text, has_newline in result)
 
     @staticmethod
     def _is_sensitive(path: Path) -> bool:

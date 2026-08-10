@@ -118,6 +118,23 @@ def test_apply_patch_accepts_no_newline_marker(tmp_path: Path):
     assert target.read_text(encoding="utf-8") == "x = 2"
 
 
+def test_apply_patch_preserves_preceding_newline_when_deleting_no_newline_line(tmp_path: Path):
+    target = tmp_path / "sample.py"
+    target.write_text("a\nb", encoding="utf-8")
+    patch = """--- a/sample.py
++++ b/sample.py
+@@ -2 +1,0 @@
+-b
+\\ No newline at end of file
+"""
+    dispatcher = ToolDispatcher(tmp_path, GuardrailPolicy(tmp_path))
+
+    result = dispatcher.dispatch(Action("apply_patch", {"patch": patch}))
+
+    assert result.ok is True
+    assert target.read_text(encoding="utf-8") == "a\n"
+
+
 def test_list_files_skips_guardrail_sensitive_names(tmp_path: Path):
     safe_file = tmp_path / "safe.py"
     safe_file.write_text("safe\n", encoding="utf-8")
