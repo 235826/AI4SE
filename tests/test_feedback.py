@@ -20,6 +20,20 @@ def test_parse_failed_test_names():
     assert feedback.counts["passed"] == 2
 
 
+def test_parse_plural_pytest_error_count():
+    result = ToolResult("run_tests", False, 1, "2 errors in 0.20s", "", [], None)
+    feedback = parse_pytest_result(result)
+    assert feedback.passed is False
+    assert feedback.counts["error"] == 2
+
+
+def test_parse_parameterized_failed_test_name_with_spaces():
+    output = "FAILED tests/test_x.py::test_case[a b] - AssertionError\n1 failed in 0.20s"
+    result = ToolResult("run_tests", False, 1, output, "", [], None)
+    feedback = parse_pytest_result(result)
+    assert feedback.failed_tests == ["tests/test_x.py::test_case[a b]"]
+
+
 def test_timeout_feedback_is_not_passed():
     feedback = timeout_feedback("pytest")
     assert feedback.passed is False
