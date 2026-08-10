@@ -166,3 +166,60 @@ v1 是否限制为六个核心模块：loop、LLM provider、tool dispatcher、g
 - 是否出现了与原意不同的解读。
 - 根据反馈对 SPEC/PLAN 做了哪些修订。
 - 关键修订前后 diff 片段。
+
+## 7. 冷启动验证记录
+
+使用的第二 agent 类型：
+
+- 使用 multi-agent 工具启动的新鲜子 agent，模型为 `gpt-5.6-luna`。
+- `fork_context=false`，不继承本会话历史。
+- 只要求它使用 `SPEC.md` 和 `PLAN.md`，尝试 Task 1 与 Task 2。
+
+执行结果：
+
+- 子 agent 在派生工作区 `/private/tmp/patchpilot-task12` 中完成 Task 1 与 Task 2。
+- 子 agent 提交 hash：`91c0254014cd13748d95594289c6e2cd7d193a9c`。
+- TDD 红灯记录：
+  - `pytest tests/test_models.py -v`：按预期因缺少 `patchpilot` 失败。
+  - `pytest tests/test_guardrails.py -v`：按预期失败。
+- 最终验证：
+  - `PYTHONDONTWRITEBYTECODE=1 pytest -v`：`8 passed`。
+  - `git diff --check`：通过。
+  - 子 agent 工作区干净。
+
+它是否暂停提问：
+
+- 没有暂停提问。它完成了 Task 1 与 Task 2，但在最终报告中列出了 3 个 SPEC/PLAN 缺陷。
+
+暴露的 SPEC/PLAN 缺陷：
+
+- `PLAN.md` 的 Task 1 创建 `src/patchpilot/__main__.py`，但 `__main__.py` 引用尚未实现的 `patchpilot.cli`。Task 1 没有入口导入测试，因此冷启动 agent 可以完成单测，但留下了潜在导入问题。
+- `PLAN.md` 的 Task 2 测试指定 `pytest --maxfail=1` 为中风险，但 `SPEC.md` 没有解释哪些动作属于中风险。
+- `SPEC.md` 和 `PLAN.md` 没有定义未知 action 类型应允许、拒绝还是报错。
+
+产出与预期差距：
+
+- 产出满足 Task 1 与 Task 2 的局部测试，但暴露出 plan 中跨 task 依赖边界不够清楚的问题。
+- 子 agent 对 guardrail 的默认未知 action 策略没有明确依据，只能从测试和实现习惯推断。
+
+根据反馈做出的修订：
+
+- 将 `src/patchpilot/__main__.py` 从 Task 1 移到 Task 9，在 `cli.py` 存在后再创建。
+- 将 `[project.scripts] patchpilot = "patchpilot.cli:main"` 从 Task 1 移到 Task 9，避免安装后入口指向尚未存在的模块。
+- 在 `SPEC.md` 明确：未知 action 默认按高风险拒绝，并计为一次无效 action。
+- 在 `SPEC.md` 明确：v1 中风险 action 仅包括仍在 `pytest` allowlist 内、但会改变测试运行完整性的参数，例如 `pytest --maxfail=1`。
+- 在 `PLAN.md` Task 2 增加未知 action 拒绝测试和对应实现片段。
+
+关键修订前后 diff 摘要：
+
+```diff
+- Task 1: Create src/patchpilot/__main__.py
++ Task 9: Create src/patchpilot/__main__.py
+
+- [project.scripts]
+- patchpilot = "patchpilot.cli:main"
++ Task 9 创建 CLI 后再加入 [project.scripts]
+
++ 未知 action 默认按高风险拒绝，并计为一次无效 action。
++ v1 中风险 action 仅包括仍在 pytest allowlist 内、但会改变测试运行完整性的参数，例如 pytest --maxfail=1。
+```

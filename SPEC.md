@@ -123,6 +123,7 @@ Guardrail 必须是确定性代码，而不是 prompt 里的提醒。
 
 阻止的动作：
 
+- 未知 action 类型。
 - 读写工作区外路径。
 - 读取 `.env`、`.ssh/`、私钥、`*.pem`、`*token*` 或 `*secret*`。
 - 运行不在 allowlist 中的命令。
@@ -131,8 +132,9 @@ Guardrail 必须是确定性代码，而不是 prompt 里的提醒。
 
 默认行为：
 
+- 未知 action 默认按高风险拒绝，并计为一次无效 action。
 - 非交互模式直接拒绝危险 action。
-- `--interactive-approval` 模式会对中风险 action 暂停并请求人工批准。
+- `--interactive-approval` 模式会对中风险 action 暂停并请求人工批准。v1 中风险 action 仅包括仍在 `pytest` allowlist 内、但会改变测试运行完整性的参数，例如 `pytest --maxfail=1`。
 - 高风险 action 即使在交互模式下也始终拒绝。
 
 ### 3.6 Feedback Sensors

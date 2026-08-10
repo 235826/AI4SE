@@ -28,7 +28,7 @@
 - `pyproject.toml`：包元数据、依赖、pytest 配置、console script。
 - `Makefile`：一键测试、格式检查入口。
 - `src/patchpilot/__init__.py`：版本号。
-- `src/patchpilot/__main__.py`：`python -m patchpilot` 入口。
+- `src/patchpilot/__main__.py`：`python -m patchpilot` 入口，由 Task 9 在 CLI 存在后创建。
 - `src/patchpilot/models.py`：`Action`、`ToolResult`、`Feedback`、`MemoryEntry`、`RunEvent`、`RunStatus`。
 - `src/patchpilot/guardrails.py`：路径策略、命令策略、风险等级、审批接口。
 - `src/patchpilot/feedback.py`：pytest 输出解析和 timeout/error feedback 构造。
@@ -66,7 +66,6 @@
 - Create: `pyproject.toml`
 - Create: `Makefile`
 - Create: `src/patchpilot/__init__.py`
-- Create: `src/patchpilot/__main__.py`
 - Create: `src/patchpilot/models.py`
 - Test: `tests/test_models.py`
 
@@ -135,9 +134,6 @@ dependencies = ["keyring>=24", "python-dotenv>=1"]
 dev = ["pytest>=8"]
 openai = ["openai>=1"]
 
-[project.scripts]
-patchpilot = "patchpilot.cli:main"
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
@@ -159,16 +155,6 @@ Create `src/patchpilot/__init__.py`:
 
 ```python
 __version__ = "0.1.0"
-```
-
-Create `src/patchpilot/__main__.py`:
-
-```python
-from patchpilot.cli import main
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
 ```
 
 Create `src/patchpilot/models.py`:
@@ -241,7 +227,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add pyproject.toml Makefile src/patchpilot/__init__.py src/patchpilot/__main__.py src/patchpilot/models.py tests/test_models.py
+git add pyproject.toml Makefile src/patchpilot/__init__.py src/patchpilot/models.py tests/test_models.py
 git commit -m "feat: add project skeleton and data models"
 ```
 
@@ -307,6 +293,14 @@ def test_medium_risk_requires_approval_only_when_enabled(tmp_path: Path):
     decision = policy.check_action(action)
     assert decision.allowed is True
     assert decision.requires_approval is True
+
+
+def test_unknown_action_is_rejected(tmp_path: Path):
+    policy = GuardrailPolicy(workspace=tmp_path)
+    decision = policy.check_action(Action(type="delete_everything", args={}))
+    assert decision.allowed is False
+    assert decision.risk == "high"
+    assert "unknown action" in decision.reason
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -348,6 +342,10 @@ class GuardrailPolicy:
     interactive_approval: bool = False
 
     def check_action(self, action: Action) -> RiskDecision:
+        known_actions = {"list_files", "read_file", "apply_patch", "run_tests", "remember", "finish"}
+        if action.type not in known_actions:
+            return RiskDecision(False, "high", f"unknown action blocked: {action.type}")
+
         if action.type in {"read_file", "apply_patch"}:
             raw_path = action.args.get("path") or action.args.get("target")
             if raw_path:
@@ -849,6 +847,8 @@ git commit -m "feat: add agent loop"
 ### Task 9: argparse CLI
 
 **Files:**
+- Modify: `pyproject.toml`
+- Create: `src/patchpilot/__main__.py`
 - Create: `src/patchpilot/cli.py`
 - Test: `tests/test_cli.py`
 
@@ -890,7 +890,7 @@ Expected: FAIL with `ModuleNotFoundError: No module named 'patchpilot.cli'`.
 
 - [ ] **Step 3: Write minimal implementation**
 
-Implement `run` and `auth` subcommands. `run` creates `GuardrailPolicy`, `MemoryStore`, `ToolDispatcher`, `MockLLM([Action("run_tests", {"command": args.test_cmd})])` for default mock demo, then invokes `AgentLoop`.
+Implement `run` and `auth` subcommands. Add `[project.scripts] patchpilot = "patchpilot.cli:main"` to `pyproject.toml`. Create `src/patchpilot/__main__.py` so `python -m patchpilot` imports `patchpilot.cli.main` only after Task 9 creates `cli.py`. `run` creates `GuardrailPolicy`, `MemoryStore`, `ToolDispatcher`, `MockLLM([Action("run_tests", {"command": args.test_cmd})])` for default mock demo, then invokes `AgentLoop`.
 
 - [ ] **Step 4: Run test to verify it passes**
 
@@ -901,7 +901,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/patchpilot/cli.py tests/test_cli.py
+git add pyproject.toml src/patchpilot/__main__.py src/patchpilot/cli.py tests/test_cli.py
 git commit -m "feat: add argparse cli"
 ```
 
