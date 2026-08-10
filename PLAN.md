@@ -237,6 +237,8 @@ git commit -m "feat: add project skeleton and data models"
 
 ### Task 2: Guardrails 路径与命令策略
 
+完成提交：`7f85296`
+
 **Files:**
 - Create: `src/patchpilot/guardrails.py`
 - Test: `tests/test_guardrails.py`
@@ -247,7 +249,7 @@ git commit -m "feat: add project skeleton and data models"
 - Produces: `GuardrailPolicy(workspace: Path, interactive_approval: bool = False)`
 - Produces: `GuardrailPolicy.check_action(action: Action) -> RiskDecision`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_guardrails.py
@@ -305,13 +307,13 @@ def test_unknown_action_is_rejected(tmp_path: Path):
     assert "unknown action" in decision.reason
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_guardrails.py -v`
 
 Expected: FAIL with `ModuleNotFoundError: No module named 'patchpilot.guardrails'`.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Create `src/patchpilot/guardrails.py` with:
 
@@ -388,13 +390,13 @@ class GuardrailPolicy:
         return RiskDecision(True, "low", "pytest command allowed")
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/test_guardrails.py -v`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/patchpilot/guardrails.py tests/test_guardrails.py
