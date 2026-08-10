@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 
 import keyring
 from dotenv import load_dotenv
@@ -11,7 +12,7 @@ class CredentialManager:
 
     def __init__(self, service_name: str = "patchpilot-openai", keyring_backend=None) -> None:
         self.service_name = service_name
-        self._keyring = keyring_backend or keyring
+        self._keyring = keyring_backend if keyring_backend is not None else keyring
 
     def status(self) -> bool:
         return bool(self.get_key())
@@ -22,12 +23,15 @@ class CredentialManager:
     def clear(self) -> None:
         try:
             self._keyring.delete_password(self.service_name, self._USERNAME)
-        except keyring.errors.PasswordDeleteError:
+        except Exception:
             pass
 
     def get_key(self) -> str | None:
-        key = self._keyring.get_password(self.service_name, self._USERNAME)
+        try:
+            key = self._keyring.get_password(self.service_name, self._USERNAME)
+        except Exception:
+            key = None
         if key:
             return key
-        load_dotenv()
+        load_dotenv(dotenv_path=Path.cwd() / ".env")
         return os.getenv("OPENAI_API_KEY")
