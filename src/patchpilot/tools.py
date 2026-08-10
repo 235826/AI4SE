@@ -10,9 +10,7 @@ from patchpilot.models import Action, ToolResult
 
 
 _HUNK_HEADER = re.compile(r"^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@")
-_SENSITIVE_OUTPUT = re.compile(
-    r"(?i)\b([a-z][a-z0-9_]*(?:token|secret|api_key|password)[a-z0-9_]*)\s*=\s*[^\s]+"
-)
+_SENSITIVE_OUTPUT = re.compile(r"(?i)(authorization\s*:\s*bearer\s+\S+|sk-[a-z0-9_-]+|secret|token|key)")
 
 
 class ToolDispatcher:
@@ -132,6 +130,7 @@ class ToolDispatcher:
         result: list[str] = []
         cursor = 0
         index = 0
+        trailing_newline = original.endswith("\n")
         while index < len(patch_lines):
             header = _HUNK_HEADER.match(patch_lines[index])
             if header is None:
@@ -139,14 +138,28 @@ class ToolDispatcher:
             old_start = int(header.group(1))
             old_count = int(header.group(2) or "1")
             new_count = int(header.group(4) or "1")
-            if old_start < 1 or old_start - 1 < cursor:
+            if old_start == 0:
+                if old_count != 0 or cursor != 0:
+                    raise ValueError("invalid hunk position")
+                hunk_start = 0
+            else:
+                hunk_start = old_start - 1
+            if old_start < 0 or hunk_start < cursor:
                 raise ValueError("invalid hunk position")
-            result.extend(source[cursor : old_start - 1])
-            cursor = old_start - 1
+            result.extend(source[cursor:hunk_start])
+            cursor = hunk_start
             index += 1
             removed = added = 0
+            previous_kind: str | None = None
             while index < len(patch_lines) and not patch_lines[index].startswith("@@ "):
                 line = patch_lines[index]
+                if line == r"\ No newline at end of file":
+                    if previous_kind is None:
+                        raise ValueError("invalid no-newline marker")
+                    if previous_kind in {" ", "+"}:
+                        trailing_newline = False
+                    index += 1
+                    continue
                 if not line or line[0] not in " +-":
                     raise ValueError("invalid unified diff line")
                 text = line[1:]
@@ -157,6 +170,8 @@ class ToolDispatcher:
                     cursor += 1
                     removed += 1
                     added += 1
+                    if cursor == len(source):
+                        trailing_newline = original.endswith("\n")
                 elif line[0] == "-":
                     if cursor >= len(source) or source[cursor] != text:
                         raise ValueError("patch removal does not match file")
@@ -165,25 +180,31 @@ class ToolDispatcher:
                 else:
                     result.append(text)
                     added += 1
+                    trailing_newline = True
+                previous_kind = line[0]
                 index += 1
             if removed != old_count or added != new_count:
                 raise ValueError("hunk line counts do not match header")
         result.extend(source[cursor:])
-        return "\n".join(result) + ("\n" if original.endswith("\n") else "")
+        if cursor < len(source):
+            trailing_newline = original.endswith("\n")
+        return "\n".join(result) + ("\n" if result and trailing_newline else "")
 
     @staticmethod
     def _is_sensitive(path: Path) -> bool:
         return any(
-            part in {".git", ".patchpilot", ".env", ".ssh"}
-            or part.endswith(".pem")
-            or "token" in part.lower()
-            or "secret" in part.lower()
+            part.lower() in {".git", ".patchpilot", ".env", ".ssh"}
+            or part.lower().endswith(".pem")
+            or any(word in part.lower() for word in {"id_rsa", "token", "secret", "key"})
             for part in path.parts
         )
 
     @staticmethod
     def _redact(text: str) -> str:
-        return _SENSITIVE_OUTPUT.sub(r"\1=[REDACTED]", text)
+        return "\n".join(
+            "[REDACTED]" if _SENSITIVE_OUTPUT.search(line) else line
+            for line in text.splitlines()
+        )
 
     @staticmethod
     def _safe_error(error: Exception) -> str:
