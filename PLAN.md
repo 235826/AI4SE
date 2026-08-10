@@ -1043,6 +1043,8 @@ git commit -m "ci: add docker build workflow"
 
 ### Task 12: 冷启动验证
 
+完成提交：`c4b2487`
+
 **Files:**
 - Modify: `SPEC_PROCESS.md`
 
@@ -1050,7 +1052,7 @@ git commit -m "ci: add docker build workflow"
 - Consumes: `SPEC.md` and `PLAN.md`
 - Produces: documented cold-start validation result in `SPEC_PROCESS.md`
 
-- [ ] **Step 1: Prepare cold-start prompt**
+- [x] **Step 1: Prepare cold-start prompt**
 
 Use this prompt with a different type of coding agent:
 
@@ -1058,7 +1060,7 @@ Use this prompt with a different type of coding agent:
 你是一个全新的 coding agent，不能访问先前设计对话。只能使用 SPEC.md 和 PLAN.md。请从 PLAN.md 中选择 Task 1 和 Task 2。必须遵循 TDD：先写失败测试并运行，确认失败后，再实现最少代码使测试通过。如果任何需求存在歧义，请暂停提问，不要猜测。
 ```
 
-- [ ] **Step 2: Record validation result**
+- [x] **Step 2: Record validation result**
 
 In `SPEC_PROCESS.md`, add a section `## 7. 冷启动验证记录` with:
 
@@ -1068,13 +1070,13 @@ In `SPEC_PROCESS.md`, add a section `## 7. 冷启动验证记录` with:
 - 产出与预期差距。
 - 根据反馈做出的修订。
 
-- [ ] **Step 3: Verify record exists**
+- [x] **Step 3: Verify record exists**
 
 Run: `rg -n "冷启动验证记录|第二 agent|SPEC/PLAN 缺陷|产出与预期差距" SPEC_PROCESS.md`
 
 Expected: PASS with matching lines.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add SPEC_PROCESS.md
