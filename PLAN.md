@@ -478,6 +478,8 @@ git commit -m "feat: parse pytest feedback"
 
 ### Task 4: JSONL Memory Store
 
+完成提交：`e5ebbef`
+
 **Files:**
 - Create: `src/patchpilot/memory.py`
 - Test: `tests/test_memory.py`
@@ -488,7 +490,7 @@ git commit -m "feat: parse pytest feedback"
 - Produces: `MemoryStore.append(kind: str, content: str, source: str, run_id: str) -> MemoryEntry`
 - Produces: `MemoryStore.recent(limit: int = 5) -> list[MemoryEntry]`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_memory.py
@@ -511,23 +513,23 @@ def test_recent_returns_empty_for_missing_file(tmp_path: Path):
     assert store.recent() == []
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_memory.py -v`
 
 Expected: FAIL with `ModuleNotFoundError: No module named 'patchpilot.memory'`.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Create `src/patchpilot/memory.py` using `json.loads`, `json.dumps`, `datetime.now(timezone.utc).isoformat()`, and `MemoryEntry`.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/test_memory.py -v`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/patchpilot/memory.py tests/test_memory.py
