@@ -986,6 +986,8 @@ git commit -m "docs: add usage and agent log"
 
 ### Task 11: Docker 与 CI
 
+完成提交：`c9a5516`
+
 **Files:**
 - Create: `Dockerfile`
 - Create: `.dockerignore`
@@ -995,17 +997,17 @@ git commit -m "docs: add usage and agent log"
 - Produces: Docker image command `docker build -t patchpilot .`
 - Produces: CI jobs `test` and `docker-build`
 
-- [ ] **Step 1: Write expected Dockerfile check**
+- [x] **Step 1: Write expected Dockerfile check**
 
 Run: `test -f Dockerfile`
 
 Expected before writing file: FAIL with exit code `1`.
 
-- [ ] **Step 2: Write Dockerfile**
+- [x] **Step 2: Write Dockerfile**
 
 Use Python 3.11 slim, install package, set workdir `/workspace`, and entrypoint `patchpilot`.
 
-- [ ] **Step 3: Write .dockerignore**
+- [x] **Step 3: Write .dockerignore**
 
 Ignore:
 
@@ -1020,7 +1022,7 @@ __pycache__
 .patchpilot
 ```
 
-- [ ] **Step 4: Write GitHub Actions CI**
+- [x] **Step 4: Write GitHub Actions CI**
 
 Create `.github/workflows/ci.yml` with:
 
@@ -1046,13 +1048,13 @@ jobs:
       - run: docker build -t patchpilot .
 ```
 
-- [ ] **Step 5: Verify Dockerfile and CI files exist**
+- [x] **Step 5: Verify Dockerfile and CI files exist**
 
 Run: `test -f Dockerfile && test -f .dockerignore && test -f .github/workflows/ci.yml`
 
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add Dockerfile .dockerignore .github/workflows/ci.yml
