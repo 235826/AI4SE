@@ -62,6 +62,8 @@
 
 ### Task 1: 项目骨架与数据模型
 
+完成提交：`bea1bc8`
+
 **Files:**
 - Create: `pyproject.toml`
 - Create: `Makefile`
@@ -77,7 +79,7 @@
 - Produces: `RunEvent(timestamp: str, run_id: str, step: int, event_type: str, payload: dict[str, Any])`
 - Produces: `RunStatus(ok: bool, reason: str, steps: int)`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_models.py
@@ -109,13 +111,13 @@ def test_feedback_and_run_status_are_plain_data():
     assert status.reason == "tests_passed"
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_models.py -v`
 
 Expected: FAIL with `ModuleNotFoundError: No module named 'patchpilot'`.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Create `pyproject.toml`:
 
@@ -218,13 +220,13 @@ class RunStatus:
     steps: int
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/test_models.py -v`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add pyproject.toml Makefile src/patchpilot/__init__.py src/patchpilot/models.py tests/test_models.py
