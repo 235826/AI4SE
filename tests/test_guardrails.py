@@ -37,6 +37,32 @@ def test_blocks_patch_targeting_outside_workspace(tmp_path: Path):
     assert decision.risk == "high"
 
 
+def test_blocks_patch_env_target_even_with_explicit_path(tmp_path: Path):
+    policy = GuardrailPolicy(workspace=tmp_path)
+    patch = "--- a/app.py\n+++ b/.env\n@@ -1 +1 @@\n-old\n+new\n"
+    decision = policy.check_action(
+        Action(type="apply_patch", args={"path": "app.py", "patch": patch})
+    )
+    assert decision.allowed is False
+    assert decision.risk == "high"
+
+
+def test_blocks_deletion_of_sensitive_path_in_patch(tmp_path: Path):
+    policy = GuardrailPolicy(workspace=tmp_path)
+    patch = "--- a/.SSH/config\n+++ /dev/null\n@@ -1 +0,0 @@\n-old\n"
+    decision = policy.check_action(Action(type="apply_patch", args={"patch": patch}))
+    assert decision.allowed is False
+    assert decision.risk == "high"
+
+
+def test_blocks_deletion_of_outside_path_in_patch(tmp_path: Path):
+    policy = GuardrailPolicy(workspace=tmp_path)
+    patch = "--- a/../../outside.py\n+++ /dev/null\n@@ -1 +0,0 @@\n-old\n"
+    decision = policy.check_action(Action(type="apply_patch", args={"patch": patch}))
+    assert decision.allowed is False
+    assert decision.risk == "high"
+
+
 def test_blocks_case_insensitive_sensitive_paths(tmp_path: Path):
     policy = GuardrailPolicy(workspace=tmp_path)
     for path in (".ENV", ".SSH/config"):
@@ -91,6 +117,14 @@ def test_allows_pytest_flags_and_test_nodeid(tmp_path: Path):
 def test_rejects_unlisted_pytest_argument(tmp_path: Path):
     policy = GuardrailPolicy(workspace=tmp_path)
     action = Action(type="run_tests", args={"command": "pytest -p evil_plugin"})
+    decision = policy.check_action(action)
+    assert decision.allowed is False
+    assert decision.risk == "high"
+
+
+def test_rejects_pytest_path_traversal(tmp_path: Path):
+    policy = GuardrailPolicy(workspace=tmp_path)
+    action = Action(type="run_tests", args={"command": "pytest tests/../../outside.py"})
     decision = policy.check_action(action)
     assert decision.allowed is False
     assert decision.risk == "high"

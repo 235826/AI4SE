@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-import re
 
 from patchpilot.models import Action
 
@@ -37,12 +36,10 @@ class GuardrailPolicy:
                 decision = self._check_path(str(raw_path))
                 if not decision.allowed:
                     return decision
-            elif action.type == "apply_patch":
-                patch = str(action.args.get("patch", ""))
-                for raw_path in re.findall(r"^\+\+\+ b/(.+)$", patch, re.MULTILINE):
-                    decision = self._check_path(raw_path.split("\t", 1)[0])
-                    if not decision.allowed:
-                        return decision
+            if action.type == "apply_patch" and "patch" in action.args:
+                decision = self._check_patch_paths(str(action.args["patch"]))
+                if not decision.allowed:
+                    return decision
 
         if action.type == "run_tests":
             return self._check_command(str(action.args.get("command", "")))
@@ -66,6 +63,22 @@ class GuardrailPolicy:
             return RiskDecision(False, "high", f"sensitive name blocked: {raw_path}")
         return RiskDecision(True, "low", "path allowed")
 
+    def _check_patch_paths(self, patch: str) -> RiskDecision:
+        for line in patch.splitlines():
+            if not (line.startswith("--- ") or line.startswith("+++ ")):
+                continue
+            raw_path = line[4:].split("\t", 1)[0]
+            if raw_path == "/dev/null":
+                continue
+            if raw_path.startswith(("a/", "b/")):
+                raw_path = raw_path[2:]
+            else:
+                return RiskDecision(False, "high", f"invalid patch path: {raw_path}")
+            decision = self._check_path(raw_path)
+            if not decision.allowed:
+                return decision
+        return RiskDecision(True, "low", "patch paths allowed")
+
     def _check_command(self, command: str) -> RiskDecision:
         normalized = " ".join(command.lower().split())
         dangerous = tuple(" ".join(pattern.split()) for pattern in DANGEROUS_COMMANDS)
@@ -75,8 +88,20 @@ class GuardrailPolicy:
         if not parts or parts[0] != "pytest":
             return RiskDecision(False, "high", f"command outside allowlist: {command}")
         allowed_flags = {"-q", "-v", "--maxfail=1"}
-        if any(part not in allowed_flags and not part.startswith("tests/") for part in parts[1:]):
-            return RiskDecision(False, "high", f"command argument outside allowlist: {command}")
+        for part in parts[1:]:
+            if part in allowed_flags:
+                continue
+            if not self._is_allowed_test_target(part):
+                return RiskDecision(False, "high", f"command argument outside allowlist: {command}")
         if self.interactive_approval and "--maxfail=1" in parts:
             return RiskDecision(True, "medium", "pytest maxfail changes run behavior", True)
         return RiskDecision(True, "low", "pytest command allowed")
+
+    def _is_allowed_test_target(self, target: str) -> bool:
+        path_text = target.split("::", 1)[0]
+        path = Path(path_text)
+        if not path_text.startswith("tests/") or path.is_absolute() or ".." in path.parts:
+            return False
+        resolved = (self.workspace / path).resolve()
+        workspace = self.workspace.resolve()
+        return workspace in resolved.parents
