@@ -1,25 +1,25 @@
-# PatchPilot SPEC
+# PatchPilot 规格说明
 
-## 1. Problem Statement
+## 1. 问题陈述
 
-PatchPilot is a small, test-driven coding agent harness for Python projects. It helps a developer run a controlled repair loop over a local workspace: inspect files, apply patches, run `pytest`, read objective feedback, and stop when the tests pass or a safety/iteration boundary is reached.
+PatchPilot 是一个面向 Python 项目的、测试驱动的 Coding Agent Harness。它帮助开发者在本地工作区中运行一个受控的修复循环：查看文件、应用补丁、运行 `pytest`、读取客观反馈，并在测试通过或触发安全/迭代边界时停止。
 
-The target user is a student or engineer who wants to understand how a coding agent harness works below the LLM layer. The project is worth building because it exposes the engineering mechanisms that make an agent reliable: tool dispatch, deterministic feedback, guardrails, memory, credential handling, and distribution. The goal is not to build a production IDE agent; the goal is to implement a minimal but real harness kernel whose core behavior remains testable with a mock LLM.
+目标用户是希望理解 coding agent harness 在 LLM 之外如何工作的学生或工程师。本项目值得做，是因为它把一个可靠 agent 所依赖的工程机制显性化：工具分发、确定性反馈、治理护栏、记忆、凭据管理和分发。项目目标不是做一个生产级 IDE agent，而是实现一个最小但真实的 harness 内核，并保证核心行为在使用 mock LLM 时仍可测试。
 
-## 2. User Stories
+## 2. 用户故事
 
-1. As a developer, I want to run `patchpilot run --task "fix failing tests" --test-cmd "pytest"` in a Python project so that the harness can attempt a bounded repair loop.
-2. As a developer, I want PatchPilot to run with a mock LLM by default so that I can test and demonstrate the harness without paid API access.
-3. As a developer, I want optional OpenAI support with secure key storage so that I can try real model-driven actions without hardcoding credentials.
-4. As a reviewer, I want every tool action and result to be recorded in structured logs so that I can audit what the agent did.
-5. As a safety-conscious user, I want dangerous commands and sensitive file access to be blocked or require approval so that the agent cannot damage the project or expose secrets.
-6. As a maintainer, I want deterministic unit tests for the loop, tools, feedback, guardrails, memory, credentials, and CLI so that the harness mechanisms can be verified without a real LLM.
+1. 作为开发者，我希望在 Python 项目中运行 `patchpilot run --task "fix failing tests" --test-cmd "pytest"`，以便 harness 能启动一个有边界的测试修复循环。
+2. 作为开发者，我希望 PatchPilot 默认使用 mock LLM，以便在没有付费 API 的情况下测试和演示 harness。
+3. 作为开发者，我希望可选接入 OpenAI，并通过安全凭据存储读取 key，以便尝试真实模型驱动的动作，同时不把凭据硬编码进源码。
+4. 作为 reviewer，我希望每个工具动作和结果都被结构化记录，以便审计 agent 做过什么。
+5. 作为关注安全的用户，我希望危险命令和敏感文件访问被阻止或要求人工批准，以免 agent 破坏项目或泄露秘密。
+6. 作为维护者，我希望 agent loop、工具、反馈、护栏、记忆、凭据和 CLI 都有确定性单元测试，以便在没有真实 LLM 的情况下验证 harness 机制。
 
-## 3. Functional Specification
+## 3. 功能规约
 
 ### 3.1 CLI
 
-Inputs:
+输入：
 
 - `patchpilot run --task <text> --test-cmd <command>`
 - `--provider mock|openai`
@@ -28,70 +28,70 @@ Inputs:
 - `--interactive-approval`
 - `patchpilot auth status|set|clear`
 
-Behavior:
+行为：
 
-- Validates workspace and arguments.
-- Uses `mock` provider by default.
-- Uses OpenAI only when explicitly requested.
-- Exits with code `0` when tests pass or the agent finishes successfully.
-- Exits with non-zero code for failed repair, blocked action, invalid configuration, or exhausted steps.
+- 校验工作区和参数。
+- 默认使用 `mock` provider。
+- 只有用户显式指定时才使用 OpenAI。
+- 当测试通过或 agent 成功 `finish` 时退出码为 `0`。
+- 当修复失败、动作被阻止、配置无效或步数耗尽时退出码非 `0`。
 
-Boundary cases:
+边界条件：
 
-- Missing task: reject with usage error.
-- Test command outside allowlist: reject before the loop starts.
-- Workspace path outside current accessible directory: reject.
+- 缺少 task：以用法错误拒绝。
+- 测试命令不在 allowlist：在 loop 启动前拒绝。
+- 工作区路径不在允许访问范围内：拒绝。
 
 ### 3.2 Agent Loop
 
-Inputs:
+输入：
 
-- Task text.
-- Workspace metadata.
-- Memory snippets.
-- Previous tool results.
-- LLM provider.
+- 任务文本。
+- 工作区元数据。
+- 记忆片段。
+- 上一步工具结果。
+- LLM provider。
 
-Behavior:
+行为：
 
-1. Build context.
-2. Call `LLMProvider.next_action(context)`.
-3. Parse a structured action.
-4. Run guardrail checks.
-5. Dispatch the action to a tool.
-6. Convert tool output into structured feedback.
-7. Append feedback to the next context.
-8. Stop when a terminal condition is reached.
+1. 构建上下文。
+2. 调用 `LLMProvider.next_action(context)`。
+3. 解析结构化 action。
+4. 执行 guardrail 检查。
+5. 将 action 分发给工具。
+6. 把工具输出转换为结构化 feedback。
+7. 将 feedback 加入下一轮上下文。
+8. 达到终止条件时停止。
 
-Outputs:
+输出：
 
-- Final run status.
-- Structured event log.
-- Updated memory entries.
+- 最终运行状态。
+- 结构化事件日志。
+- 更新后的记忆条目。
 
-Stop conditions:
+停止条件：
 
-- `finish` action.
-- `pytest` passes.
-- `--max-steps` reached.
-- Two consecutive invalid actions.
-- Dangerous action rejected.
-- Tool timeout.
+- 收到 `finish` action。
+- `pytest` 通过。
+- 达到 `--max-steps`。
+- 连续两次无效 action。
+- 危险 action 被拒绝。
+- 工具执行超时。
 
 ### 3.3 LLM Provider
 
-Providers:
+Provider：
 
-- `MockLLM`: deterministic scripted actions for tests and demos.
-- `OpenAILLM`: optional real provider, using a single chat completion style call.
+- `MockLLM`：用于测试和演示的确定性脚本化动作。
+- `OpenAILLM`：可选真实 provider，使用单次 chat completion 风格调用。
 
-Input:
+输入：
 
-- Structured context object.
+- 结构化上下文对象。
 
-Output:
+输出：
 
-- One structured action:
+- 一个结构化 action：
   - `list_files`
   - `read_file`
   - `apply_patch`
@@ -99,168 +99,168 @@ Output:
   - `remember`
   - `finish`
 
-Errors:
+错误处理：
 
-- Invalid provider configuration produces a configuration error before the loop.
-- Invalid LLM output is counted as an invalid action.
+- provider 配置无效时，在 loop 启动前返回配置错误。
+- LLM 输出无效时，计为一次无效 action。
 
 ### 3.4 Tool Dispatcher
 
-Tools:
+工具：
 
-- `list_files`: list non-sensitive files under the workspace.
-- `read_file`: read a workspace file unless guardrails block it.
-- `apply_patch`: apply a unified patch to allowed files.
-- `run_tests`: run the allowed test command.
-- `remember`: write a memory event.
-- `finish`: produce terminal status.
+- `list_files`：列出工作区内非敏感文件。
+- `read_file`：读取工作区文件，除非被 guardrail 阻止。
+- `apply_patch`：对允许路径应用 unified patch。
+- `run_tests`：运行允许的测试命令。
+- `remember`：写入一条记忆事件。
+- `finish`：产生终止状态。
 
-All tool inputs and outputs are structured. Logs must redact secret-like values.
+所有工具输入和输出都必须结构化。日志必须对疑似秘密值做脱敏。
 
 ### 3.5 Guardrails
 
-Guardrails are deterministic code, not prompt instructions.
+Guardrail 必须是确定性代码，而不是 prompt 里的提醒。
 
-Blocked actions:
+阻止的动作：
 
-- Read or write outside workspace.
-- Read `.env`, `.ssh/`, private keys, `*.pem`, `*token*`, or `*secret*`.
-- Run commands outside the allowlist.
-- Run dangerous shell patterns such as `rm -rf`, `curl | sh`, release commands, `git push`, or package publish commands.
-- Patch forbidden paths.
+- 读写工作区外路径。
+- 读取 `.env`、`.ssh/`、私钥、`*.pem`、`*token*` 或 `*secret*`。
+- 运行不在 allowlist 中的命令。
+- 运行危险 shell 模式，例如 `rm -rf`、`curl | sh`、发布命令、`git push` 或包发布命令。
+- 对禁止路径应用 patch。
 
-Default behavior:
+默认行为：
 
-- Non-interactive mode rejects dangerous actions.
-- Interactive approval mode pauses for human approval for configured medium-risk actions.
-- High-risk actions are always rejected, even in interactive mode.
+- 非交互模式直接拒绝危险 action。
+- `--interactive-approval` 模式会对中风险 action 暂停并请求人工批准。
+- 高风险 action 即使在交互模式下也始终拒绝。
 
 ### 3.6 Feedback Sensors
 
-The pytest sensor parses:
+`pytest` sensor 解析：
 
-- Exit code.
-- Passed, failed, and error counts.
-- Failed test names.
-- Short traceback summary.
-- Whether the test command satisfies the pass criterion.
+- exit code。
+- passed、failed、error 数量。
+- 失败测试名。
+- 简短 traceback 摘要。
+- 测试命令是否满足通过标准。
 
-This feedback is returned to the agent loop as a structured object rather than as raw terminal text only.
+这些 feedback 以结构化对象回灌给 agent loop，而不是只把原始终端文本塞回上下文。
 
 ### 3.7 Memory Store
 
-Storage:
+存储：
 
-- JSONL in `.patchpilot/memory.jsonl`.
+- `.patchpilot/memory.jsonl`。
 
-Entries:
+条目：
 
-- Project rules.
-- User decisions.
-- Attempted actions.
-- Recent failure summaries.
-- Run summaries.
+- 项目规则。
+- 用户决策。
+- 已尝试动作。
+- 最近失败摘要。
+- 运行摘要。
 
-The context builder injects only relevant recent memory, not the full history.
+Context builder 只注入相关的近期记忆，不把完整历史全量加载给 LLM。
 
 ### 3.8 Credentials
 
-Commands:
+命令：
 
 - `patchpilot auth status`
 - `patchpilot auth set`
 - `patchpilot auth clear`
 
-Behavior:
+行为：
 
-- `status` never prints the plaintext key.
-- `set` uses hidden input.
-- `clear` removes the stored key.
+- `status` 绝不打印明文 key。
+- `set` 使用隐藏输入。
+- `clear` 删除已存储 key。
 
-Credential sources:
+凭据来源优先级：
 
-1. OS keychain through Python `keyring`.
-2. `.env` for development fallback only.
-3. Hidden interactive entry saved to keyring.
+1. 通过 Python `keyring` 读取操作系统钥匙串。
+2. `.env` 仅作为开发 fallback。
+3. 隐藏交互式输入，并保存到 keyring。
 
-## 4. Non-Functional Requirements
+## 4. 非功能性需求
 
-### 4.1 Performance
+### 4.1 性能
 
-- A default run must finish within the configured step limit.
-- Tool timeouts prevent unbounded test execution.
-- Context size is controlled by memory summarization and recent-result selection.
+- 默认运行必须在配置的 step limit 内结束。
+- 工具 timeout 防止测试命令无限运行。
+- 通过记忆摘要和近期结果选择控制上下文大小。
 
-### 4.2 Security
+### 4.2 安全
 
-Threat model:
+威胁模型：
 
-- The LLM may request unsafe file access or shell commands.
-- The workspace may contain secrets.
-- Logs may accidentally capture sensitive values.
-- API keys may be leaked through source code, command history, logs, or plaintext config.
+- LLM 可能请求不安全的文件访问或 shell 命令。
+- 工作区可能包含秘密。
+- 日志可能意外捕获敏感值。
+- API key 可能通过源码、命令历史、日志或明文配置泄露。
 
-Countermeasures:
+对策：
 
-- Default mock provider avoids credentials.
-- OpenAI key is stored in the OS keychain where possible.
-- `.env` is allowed only as a development fallback and is documented as plaintext risk.
-- Hidden input is used for key entry.
-- Secret values are redacted in logs.
-- Sensitive paths are blocked by deterministic guardrail code.
-- Test command execution is allowlisted.
+- 默认 mock provider 不需要任何凭据。
+- OpenAI key 尽可能存储在操作系统钥匙串中。
+- `.env` 只作为开发 fallback，并明确记录其明文风险。
+- key 录入使用隐藏输入。
+- 日志对秘密值脱敏。
+- 敏感路径由确定性 guardrail 代码阻止。
+- 测试命令执行使用 allowlist。
 
-### 4.3 Usability
+### 4.3 可用性
 
-- CLI errors should explain the failed precondition and the next corrective action.
-- README must include local and Docker workflows.
-- Mock mode must work without external services.
+- CLI 错误应说明失败前置条件和下一步修复动作。
+- README 必须包含本地和 Docker 工作流。
+- Mock 模式必须无需外部服务即可运行。
 
-### 4.4 Observability
+### 4.4 可观测性
 
-- Each run writes structured events for action requested, guardrail result, tool result, feedback summary, and stop reason.
-- Logs do not include plaintext API keys.
+- 每次运行都记录结构化事件：请求的 action、guardrail 结果、工具结果、feedback 摘要和停止原因。
+- 日志不包含明文 API key。
 
-## 5. System Architecture
+## 5. 系统架构
 
-Components:
+组件：
 
-- `cli`: argument parsing, auth commands, run command.
-- `agent`: main loop, context builder, stop policy.
-- `llm`: provider interface, mock provider, OpenAI provider.
-- `tools`: filesystem tools, patch application, test runner.
-- `guardrails`: path policy, command policy, approval policy.
-- `feedback`: pytest parser and feedback model.
-- `memory`: JSONL store and retrieval.
-- `credentials`: keyring and `.env` credential loading.
-- `logging`: structured event logging and redaction.
+- `cli`：参数解析、auth 命令、run 命令。
+- `agent`：主循环、context builder、停止策略。
+- `llm`：provider 接口、mock provider、OpenAI provider。
+- `tools`：文件系统工具、patch 应用、测试 runner。
+- `guardrails`：路径策略、命令策略、审批策略。
+- `feedback`：pytest parser 和 feedback model。
+- `memory`：JSONL 存储和检索。
+- `credentials`：keyring 与 `.env` 凭据加载。
+- `logging`：结构化事件日志和脱敏。
 
-Data flow:
+数据流：
 
-1. CLI constructs a run request.
-2. Context builder combines task, workspace summary, memory, and previous feedback.
-3. LLM provider returns a structured action.
-4. Guardrails approve, reject, or request approval.
-5. Tool dispatcher executes approved actions.
-6. Feedback sensors convert results into structured feedback.
-7. Agent loop records events and either continues or stops.
+1. CLI 构造 run request。
+2. Context builder 组合任务、工作区摘要、记忆和上一轮 feedback。
+3. LLM provider 返回结构化 action。
+4. Guardrails 批准、拒绝或请求人工批准。
+5. Tool dispatcher 执行已批准 action。
+6. Feedback sensors 把结果转换为结构化 feedback。
+7. Agent loop 记录事件，并决定继续或停止。
 
-External dependencies:
+外部依赖：
 
-- Python 3.11+.
-- `pytest` for tests.
-- `keyring` for OS credential storage.
-- `python-dotenv` for development `.env` fallback.
-- OpenAI API as an optional provider.
-- Docker for container distribution.
+- Python 3.11+。
+- `pytest` 用于测试。
+- `keyring` 用于操作系统凭据存储。
+- `python-dotenv` 用于开发环境 `.env` fallback。
+- OpenAI API 作为可选 provider。
+- Docker 用于容器分发。
 
-## 6. Data Model
+## 6. 数据模型
 
 ### Action
 
-- `type`: action name.
-- `args`: action-specific parameters.
-- `reason`: brief explanation from provider.
+- `type`：action 名称。
+- `args`：action 参数。
+- `reason`：provider 给出的简短理由。
 
 ### ToolResult
 
@@ -274,7 +274,7 @@ External dependencies:
 
 ### Feedback
 
-- `kind`: `pytest`, `guardrail`, `tool`, or `loop`.
+- `kind`：`pytest`、`guardrail`、`tool` 或 `loop`。
 - `passed`
 - `failed_tests`
 - `counts`
@@ -296,96 +296,96 @@ External dependencies:
 - `event_type`
 - `payload`
 
-## 7. Credential And Distribution Design
+## 7. 凭据与分发设计
 
-Credential design:
+凭据设计：
 
-- Mock mode requires no key.
-- OpenAI mode requires a key obtained from keyring or `.env`.
-- First-run setup uses `patchpilot auth set` with hidden input.
-- Status and logs never reveal plaintext keys.
-- Users can update or clear credentials through auth commands.
+- Mock 模式不需要 key。
+- OpenAI 模式需要从 keyring 或 `.env` 获取 key。
+- 首次配置使用 `patchpilot auth set`，通过隐藏输入录入。
+- status 和日志绝不显示明文 key。
+- 用户可以通过 auth 命令更新或清除凭据。
 
-Distribution:
+分发：
 
-- Primary: Docker image.
-- Development: editable Python install.
+- 主分发方式：Docker 镜像。
+- 开发方式：editable Python install。
 
-Docker commands:
+Docker 命令：
 
 ```bash
 docker build -t patchpilot .
 docker run --rm -it -v "$PWD:/workspace" patchpilot run --task "fix failing tests" --test-cmd "pytest"
 ```
 
-Known limits:
+已知限制：
 
-- Docker keyring integration is platform-dependent, so container runs should prefer mock mode or documented environment injection for non-secret demos.
-- Real OpenAI use inside Docker requires explicit secure configuration by the user.
-- v1 targets Python projects using pytest.
+- Docker 内的 keyring 集成依赖平台，因此容器运行应优先使用 mock 模式，或使用文档中明确说明的非秘密演示配置。
+- Docker 内真实 OpenAI 使用需要用户显式进行安全配置。
+- v1 只面向使用 pytest 的 Python 项目。
 
-## 8. Technology Choices
+## 8. 技术选型与理由
 
-- Language: Python, because the project targets pytest repair loops and has straightforward CLI, testing, keyring, and Docker support.
-- CLI framework: standard library `argparse`, to keep the harness small and avoid extra runtime dependency decisions during cold-start implementation.
-- Test framework: pytest.
-- Credential library: keyring.
-- LLM provider: mock by default, OpenAI API optional.
-- Storage: JSONL for memory and run events because it is simple, inspectable, and easy to test.
-- Distribution: Docker as the required path, editable pip install for development.
-- UI: no frontend, so Open Design does not apply.
+- 语言：Python。理由是项目目标是 pytest 修复循环，并且 Python 在 CLI、测试、keyring 和 Docker 支持上都直接。
+- CLI 框架：标准库 `argparse`。理由是减少运行时依赖，降低冷启动实现歧义。
+- 测试框架：pytest。
+- 凭据库：keyring。
+- LLM provider：默认 mock，可选 OpenAI API。
+- 存储：JSONL。理由是简单、可审计、易测试，适合 memory 和 run event。
+- 分发：Docker 作为必做路径，editable pip install 用于开发。
+- UI：无前端，因此 Open Design 不适用。
 
-## 9. Acceptance Criteria
+## 9. 验收标准
 
-1. `make test` or equivalent runs all tests in one command.
-2. Mock LLM tests verify the agent loop without network access.
-3. Guardrail tests prove dangerous paths and commands are blocked.
-4. Pytest feedback parser tests cover pass, fail, error, and timeout cases.
-5. Credential tests use mocked keyring and never print plaintext keys.
-6. CLI tests cover `run` and `auth` commands.
-7. Docker image builds successfully in CI.
-8. README explains install, run, Docker, credentials, and known limits.
-9. `SPEC.md`, `PLAN.md`, `SPEC_PROCESS.md`, `AGENT_LOG.md`, and `REFLECTION.md` exist.
-10. No real secrets are present in source, tests, logs, or config.
+1. `make test` 或等价命令可一键运行全部测试。
+2. Mock LLM 测试可在无网络情况下验证 agent loop。
+3. Guardrail 测试证明危险路径和危险命令会被阻止。
+4. Pytest feedback parser 测试覆盖通过、失败、error 和 timeout。
+5. Credential 测试使用 mock keyring，且不打印明文 key。
+6. CLI 测试覆盖 `run` 和 `auth` 命令。
+7. Docker 镜像能在 CI 中成功构建。
+8. README 说明安装、运行、Docker、凭据和已知限制。
+9. `SPEC.md`、`PLAN.md`、`SPEC_PROCESS.md`、`AGENT_LOG.md` 和 `REFLECTION.md` 存在。
+10. 源码、测试、日志和配置中不得出现真实秘密。
 
-## 10. Domain And Mechanism Design
+## 10. 领域与机制设计
 
-PatchPilot implements the four required harness mechanism classes:
+PatchPilot 实现作业要求的四类 harness 机制。
 
-### 10.1 Actions And Tools
+### 10.1 动作与工具
 
-Actions are structured objects produced by the LLM provider and executed only through the dispatcher. The agent cannot run arbitrary code directly.
+Action 是由 LLM provider 产生的结构化对象，只能通过 dispatcher 执行。Agent 不能直接运行任意代码。
 
-### 10.2 Objective Feedback Signals
+### 10.2 客观反馈信号
 
-The pytest sensor is deterministic code. It parses command result data and returns pass/fail status, failing tests, and summaries. This feedback drives the next loop step.
+`pytest` sensor 是确定性代码。它解析命令结果，返回 pass/fail 状态、失败测试和摘要。该 feedback 驱动下一轮 loop。
 
-### 10.3 Dangerous Actions
+### 10.3 危险动作
 
-The guardrail layer detects dangerous file paths, shell commands, and patch targets before execution. The block decision is testable with mock actions and does not depend on LLM compliance.
+Guardrail 层在执行前检测危险文件路径、shell 命令和 patch 目标。阻止决策可通过 mock action 单测验证，不依赖 LLM 自觉遵守提示词。
 
-### 10.4 Memory
+### 10.4 记忆
 
-Memory is explicit local data. The context builder selects bounded memory entries for the next LLM call. Tests can verify read, write, filtering, and context injection without a real LLM.
+Memory 是显式本地数据。Context builder 为下一次 LLM 调用选择有界的 memory 条目。测试可以在没有真实 LLM 的情况下验证读、写、过滤和上下文注入。
 
-## 11. Risks And Mitigations
+## 11. 风险与对策
 
-Risks:
+风险：
 
-- Real LLM output may not follow the expected action schema.
-- Patch application can be brittle if diffs do not match the workspace.
-- Docker credential storage differs by platform.
-- Overly broad shell support would weaken the safety story.
+- 真实 LLM 输出可能不符合 action schema。
+- 如果 diff 与工作区不匹配，patch 应用可能失败。
+- Docker 凭据存储在不同平台上表现不同。
+- 过宽的 shell 支持会削弱安全边界。
 
-Mitigations:
+对策：
 
-- Treat invalid provider output as an invalid action with a stop threshold.
-- Keep v1 tools narrow and deterministic.
-- Make Docker mock mode the default demonstration.
-- Document OpenAI-in-Docker limitations clearly.
+- 将无效 provider 输出计为 invalid action，并设置停止阈值。
+- v1 工具保持窄而确定。
+- Docker 演示默认使用 mock 模式。
+- README 明确记录 OpenAI-in-Docker 限制。
 
-Resolved implementation choices:
+已决实现选择：
 
-- CLI uses `argparse`.
-- v1 includes an `--interactive-approval` flag for medium-risk actions.
-- High-risk actions remain non-overridable.
+- CLI 使用 `argparse`。
+- v1 包含 `--interactive-approval`，用于中风险动作审批。
+- 高风险动作始终不可覆盖。
