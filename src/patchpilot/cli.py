@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import argparse
 import getpass
+import sys
 from pathlib import Path
 
 from patchpilot.agent import AgentLoop
 from patchpilot.credentials import CredentialManager
 from patchpilot.guardrails import GuardrailPolicy
-from patchpilot.llm import MockLLM
+from patchpilot.llm import MockLLM, OpenAILLM
 from patchpilot.memory import MemoryStore
 from patchpilot.models import Action
 from patchpilot.tools import ToolDispatcher
@@ -20,6 +21,7 @@ def build_parser() -> argparse.ArgumentParser:
     run = commands.add_parser("run")
     run.add_argument("--task", required=True)
     run.add_argument("--test-cmd", required=True)
+    run.add_argument("--provider", choices=("mock", "openai"), default="mock")
     run.add_argument("--max-steps", type=int, default=5)
     run.add_argument("--workspace", type=Path, default=Path.cwd())
     run.add_argument("--interactive-approval", action="store_true")
@@ -62,7 +64,14 @@ def _run_agent(args: argparse.Namespace) -> int:
     guardrails = GuardrailPolicy(workspace, interactive_approval=args.interactive_approval)
     memory = MemoryStore(workspace / ".patchpilot" / "memory.jsonl")
     dispatcher = ToolDispatcher(workspace, guardrails, memory)
-    llm = MockLLM([Action("run_tests", {"command": args.test_cmd})])
+    if args.provider == "openai":
+        api_key = CredentialManager().get_key()
+        if not api_key:
+            print("OpenAI API key is not configured. Run patchpilot auth set.", file=sys.stderr)
+            return 1
+        llm = OpenAILLM(api_key=api_key)
+    else:
+        llm = MockLLM([Action("run_tests", {"command": args.test_cmd})])
     status = AgentLoop(llm, dispatcher, max_steps=args.max_steps).run(args.task, args.test_cmd)
     print(status.reason)
     return 0 if status.ok else 1
