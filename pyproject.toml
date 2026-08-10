@@ -8,6 +8,9 @@ version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = ["keyring>=24", "python-dotenv>=1"]
 
+[project.scripts]
+patchpilot = "patchpilot.cli:main"
+
 [project.optional-dependencies]
 dev = ["pytest>=8"]
 openai = ["openai>=1"]
