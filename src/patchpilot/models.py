@@ -20,6 +20,7 @@ class ToolResult:
     stderr_summary: str = ""
     changed_files: list[str] = field(default_factory=list)
     error: str | None = None
+    blocked: bool = False
 
 
 @dataclass(frozen=True)

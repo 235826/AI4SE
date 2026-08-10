@@ -5,7 +5,7 @@ from typing import Any
 
 from patchpilot.feedback import parse_pytest_result
 from patchpilot.llm import LLMProvider
-from patchpilot.models import RunEvent, RunStatus, ToolResult
+from patchpilot.models import Feedback, RunEvent, RunStatus, ToolResult
 from patchpilot.tools import ToolDispatcher
 
 
@@ -28,30 +28,45 @@ class AgentLoop:
         for step in range(1, self.max_steps + 1):
             action = self.llm.next_action(context)
             result = self.dispatcher.dispatch(action)
-            self.events.append(self._event(step, action.type, action.args, result))
+            feedback: Feedback | None = None
+            if action.type == "run_tests" and not result.blocked:
+                feedback = parse_pytest_result(result)
+                context["feedback"] = feedback
+
+            self.events.append(self._event(step, action.type, action.args, result, feedback))
+
+            if result.blocked:
+                return RunStatus(False, "blocked_action", step)
 
             if action.type == "finish":
                 return RunStatus(bool(action.args.get("ok", True)), "finish", step)
-            if action.type == "run_tests":
-                feedback = parse_pytest_result(result)
-                context["feedback"] = feedback
+            if feedback is not None:
                 if feedback.passed:
                     return RunStatus(True, "tests_passed", step)
-                continue
-            if not result.ok:
-                return RunStatus(False, "blocked_action", step)
 
             context["last_result"] = result
 
         return RunStatus(False, "max_steps", self.max_steps)
 
     def _event(
-        self, step: int, action_type: str, action_args: dict[str, Any], result: ToolResult
+        self,
+        step: int,
+        action_type: str,
+        action_args: dict[str, Any],
+        result: ToolResult,
+        feedback: Feedback | None,
     ) -> RunEvent:
+        payload: dict[str, Any] = {
+            "action_type": action_type,
+            "action_args": action_args,
+            "tool": {"ok": result.ok, "error": result.error, "blocked": result.blocked},
+        }
+        if feedback is not None:
+            payload["feedback_summary"] = feedback.summary
         return RunEvent(
             timestamp=datetime.now(timezone.utc).isoformat(),
             run_id=self.run_id,
             step=step,
             event_type=action_type,
-            payload={"args": action_args, "result": result},
+            payload=payload,
         )

@@ -19,6 +19,12 @@ def test_tool_result_records_changed_files():
     assert result.changed_files == ["src/example.py"]
 
 
+def test_tool_result_defaults_blocked_to_false_for_positional_callers():
+    result = ToolResult("run_tests", False, 1, "", "", [], "test command failed")
+
+    assert result.blocked is False
+
+
 def test_feedback_and_run_status_are_plain_data():
     feedback = Feedback(kind="pytest", passed=True, failed_tests=[], counts={"passed": 3}, summary="3 passed")
     status = RunStatus(ok=True, reason="tests_passed", steps=2)

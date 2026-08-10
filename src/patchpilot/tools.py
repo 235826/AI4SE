@@ -29,9 +29,9 @@ class ToolDispatcher:
     def dispatch(self, action: Action) -> ToolResult:
         decision = self.guardrails.check_action(action)
         if not decision.allowed:
-            return ToolResult(action.type, False, None, error=decision.reason)
+            return ToolResult(action.type, False, None, error=decision.reason, blocked=True)
         if decision.requires_approval:
-            return ToolResult(action.type, False, None, error="action requires approval")
+            return ToolResult(action.type, False, None, error="action requires approval", blocked=True)
 
         try:
             handler = getattr(self, f"_{action.type}")

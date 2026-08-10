@@ -30,8 +30,18 @@ def test_dispatch_blocks_sensitive_file(tmp_path: Path):
     dispatcher = ToolDispatcher(tmp_path, GuardrailPolicy(tmp_path))
     result = dispatcher.dispatch(Action("read_file", {"path": ".env"}))
     assert result.ok is False
+    assert result.blocked is True
     assert result.error is not None
     assert "secret" not in result.stderr_summary
+
+
+def test_dispatch_marks_tool_errors_as_not_blocked(tmp_path: Path):
+    dispatcher = ToolDispatcher(tmp_path, GuardrailPolicy(tmp_path))
+
+    result = dispatcher.dispatch(Action("read_file", {"path": "missing.py"}))
+
+    assert result.ok is False
+    assert result.blocked is False
 
 
 def test_run_tests_redacts_sensitive_stdout_and_stderr(tmp_path: Path):
