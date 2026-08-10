@@ -927,6 +927,8 @@ git commit -m "feat: add argparse cli"
 
 ### Task 10: README、AGENT_LOG 与分发说明
 
+完成提交：`f52388d`
+
 **Files:**
 - Create: `README.md`
 - Create: `AGENT_LOG.md`
@@ -936,13 +938,13 @@ git commit -m "feat: add argparse cli"
 - Consumes: implemented CLI commands.
 - Produces: documented commands for local install, mock run, Docker run, auth status/set/clear, known limits.
 
-- [ ] **Step 1: Write documentation acceptance check**
+- [x] **Step 1: Write documentation acceptance check**
 
 Run: `rg -n "patchpilot run|docker build|auth status|keyring|Mock|pytest|已知限制" README.md`
 
 Expected before writing docs: FAIL because `README.md` does not exist.
 
-- [ ] **Step 2: Write README.md**
+- [x] **Step 2: Write README.md**
 
 Include these exact command blocks:
 
@@ -959,7 +961,7 @@ docker run --rm -it -v "$PWD:/workspace" patchpilot run --task "fix failing test
 
 Explain in Chinese: mock mode requires no key; OpenAI mode reads keyring first and `.env` only as plaintext development fallback; status never prints plaintext key; v1 only supports Python + pytest.
 
-- [ ] **Step 3: Write AGENT_LOG.md**
+- [x] **Step 3: Write AGENT_LOG.md**
 
 Record initial entries for:
 
@@ -967,13 +969,13 @@ Record initial entries for:
 - writing-plans used to generate PLAN.
 - each future task must append timestamp, task number, skill, prompt/context, result, human intervention, lesson.
 
-- [ ] **Step 4: Verify documentation**
+- [x] **Step 4: Verify documentation**
 
 Run: `rg -n "patchpilot run|docker build|auth status|keyring|Mock|pytest|已知限制" README.md`
 
 Expected: PASS with matching lines.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add README.md AGENT_LOG.md SPEC_PROCESS.md
