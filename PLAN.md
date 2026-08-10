@@ -62,7 +62,7 @@
 
 ### Task 1: 项目骨架与数据模型
 
-完成提交：`bea1bc8`
+Task 1 完成提交：`bea1bc8`
 
 **Files:**
 - Create: `pyproject.toml`
@@ -237,7 +237,7 @@ git commit -m "feat: add project skeleton and data models"
 
 ### Task 2: Guardrails 路径与命令策略
 
-完成提交：`7f85296`
+Task 2 完成提交：`7f85296`
 
 **Files:**
 - Create: `src/patchpilot/guardrails.py`
@@ -407,7 +407,7 @@ git commit -m "feat: add guardrail policy"
 
 ### Task 3: Pytest Feedback Sensor
 
-完成提交：`ace610c`
+Task 3 完成提交：`ace610c`
 
 **Files:**
 - Create: `src/patchpilot/feedback.py`
@@ -478,7 +478,7 @@ git commit -m "feat: parse pytest feedback"
 
 ### Task 4: JSONL Memory Store
 
-完成提交：`e5ebbef`
+Task 4 完成提交：`e5ebbef`
 
 **Files:**
 - Create: `src/patchpilot/memory.py`
@@ -540,7 +540,7 @@ git commit -m "feat: add jsonl memory store"
 
 ### Task 5: LLM Provider 抽象与 MockLLM
 
-完成提交：`822cdb7`
+Task 5 完成提交：`822cdb7`
 
 **Files:**
 - Create: `src/patchpilot/llm.py`
@@ -607,7 +607,7 @@ git commit -m "feat: add llm provider abstraction"
 
 ### Task 6: Credential Manager
 
-完成提交：`d9d0a7d`
+Task 6 完成提交：`d9d0a7d`
 
 **Files:**
 - Create: `src/patchpilot/credentials.py`
@@ -682,7 +682,7 @@ git commit -m "feat: add credential manager"
 
 ### Task 7: Tool Dispatcher
 
-完成提交：`41e45e7`
+Task 7 完成提交：`41e45e7`
 
 **Files:**
 - Create: `src/patchpilot/tools.py`
@@ -780,7 +780,7 @@ git commit -m "feat: add guarded tool dispatcher"
 
 ### Task 8: Agent Loop 与停止策略
 
-完成提交：`f5d55f3`
+Task 8 完成提交：`f5d55f3`
 
 **Files:**
 - Create: `src/patchpilot/agent.py`
@@ -862,7 +862,7 @@ git commit -m "feat: add agent loop"
 
 ### Task 9: argparse CLI
 
-完成提交：`1a4bb9d`
+Task 9 完成提交：`1a4bb9d`
 
 **Files:**
 - Modify: `pyproject.toml`
@@ -927,7 +927,7 @@ git commit -m "feat: add argparse cli"
 
 ### Task 10: README、AGENT_LOG 与分发说明
 
-完成提交：`f52388d`
+Task 10 完成提交：`f52388d`
 
 **Files:**
 - Create: `README.md`
@@ -986,7 +986,7 @@ git commit -m "docs: add usage and agent log"
 
 ### Task 11: Docker 与 CI
 
-完成提交：`c9a5516`
+Task 11 完成提交：`c9a5516`
 
 **Files:**
 - Create: `Dockerfile`
@@ -1065,7 +1065,7 @@ git commit -m "ci: add docker build workflow"
 
 ### Task 12: 冷启动验证
 
-完成提交：`c4b2487`
+Task 12 完成提交：`c4b2487`
 
 **Files:**
 - Modify: `SPEC_PROCESS.md`

@@ -31,6 +31,24 @@
 - human intervention：无。
 - lesson：文档验收应先保留红灯证据，再以原样命令块和安全限制完成绿灯验证。
 
+### Task 11：Docker 与 CI
+
+- 时间：2026-08-10
+- skill：`superpowers:verification-before-completion`
+- prompt/context：为离线可运行的 PatchPilot 增加 Docker 镜像、构建上下文排除规则和 GitHub Actions 测试、镜像构建流程。
+- result：提交 `438b055` 创建 Docker 与 CI，提交 `c9a5516` 收紧 `.dockerignore`，并由 `21d6c83` 在计划中记录完成状态。
+- human intervention：无。
+- lesson：容器化不仅是交付介质；`.dockerignore` 也是凭据与本地状态的边界，必须随镜像构建一起审查。
+
+### Task 13：最终反思与验收
+
+- 时间：2026-08-10
+- skill：`superpowers:verification-before-completion`
+- prompt/context：依据 `task-13-brief.md` 核对完整提交历史，记录反思，更新任务状态，并执行测试、镜像构建、凭据扫描和差异检查。
+- result：在创建 `REFLECTION.md` 前保留 `test -f REFLECTION.md` 退出码 `1` 的红灯证据；Task 1-12 的提交均可解析，Task 13 的验收结果在最终报告中归档。
+- human intervention：无。
+- lesson：最终文档应把提交可追溯性、验证命令和安全扫描结果放在同一证据链中，避免以口头结论替代可复现检查。
+
 ## 后续任务追加格式
 
 每个未来任务必须追加一条记录，至少包含：
