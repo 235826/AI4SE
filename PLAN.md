@@ -780,6 +780,8 @@ git commit -m "feat: add guarded tool dispatcher"
 
 ### Task 8: Agent Loop 与停止策略
 
+完成提交：`f5d55f3`
+
 **Files:**
 - Create: `src/patchpilot/agent.py`
 - Test: `tests/test_agent.py`
@@ -790,7 +792,7 @@ git commit -m "feat: add guarded tool dispatcher"
 - Produces: `AgentLoop.run(task: str, test_command: str) -> RunStatus`
 - Produces: `AgentLoop.events: list[RunEvent]`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_agent.py
@@ -833,23 +835,23 @@ def test_loop_stops_on_blocked_action(tmp_path: Path):
     assert status.reason == "blocked_action"
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_agent.py -v`
 
 Expected: FAIL with `ModuleNotFoundError: No module named 'patchpilot.agent'`.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Implement loop: for each step, call LLM, dispatch action, append `RunEvent`, parse pytest result when action type is `run_tests`, return `RunStatus(True, "tests_passed", step)` when feedback passes, return `RunStatus(False, "blocked_action", step)` when dispatch result is blocked, and return `RunStatus(False, "max_steps", max_steps)` after exhaustion.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/test_agent.py -v`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/patchpilot/agent.py tests/test_agent.py
