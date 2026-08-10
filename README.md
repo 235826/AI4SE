@@ -33,27 +33,27 @@ patchpilot auth set
 patchpilot auth clear
 ```
 
-设置 key 后，可以显式选择 OpenAI provider：
-
-```bash
-patchpilot run --provider openai --task "fix failing tests" --test-cmd "pytest"
-```
+`auth set`、`auth status` 和 `auth clear` 已提供 OpenAI 凭据配置管理，但当前
+`OpenAILLM` 仍是离线占位实现，真实 OpenAI 调用须等后续 provider 完成后才可用。
+当前可运行的路径是 Mock 模式。
 
 ## Docker
 
-使用 Docker 构建并在挂载的项目工作区运行：
+以下是 Task 11 完成分发文件后的计划命令。当前任务尚未创建 `Dockerfile` 和
+`.dockerignore`，因此当前不可构建：
 
 ```bash
 docker build -t patchpilot .
 docker run --rm -it -v "$PWD:/workspace" patchpilot run --task "fix failing tests" --test-cmd "pytest"
 ```
 
-容器内同样可以使用 Mock 模式而无需 key。使用 OpenAI provider 时，应通过安全的运行时凭据配置向容器提供 key，不要把真实凭据写入镜像或提交到仓库。
+Task 11 完成后，容器内可以使用 Mock 模式而无需 key。使用 OpenAI provider 时，
+应通过安全的运行时凭据配置向容器提供 key，不要把真实凭据写入镜像或提交到仓库。
 
 ## 已知限制
 
 - v1 只支持 Python + pytest 项目。
 - v1 不提供 Web UI、向量数据库、多 agent 并发或任意 shell 命令执行。
 - Mock provider 用于确定性验证，不代表真实 OpenAI 模型的修复能力。
-- OpenAI provider 需要用户自行配置有效凭据和网络访问。
+- OpenAI provider 当前仍为离线占位实现，真实调用尚未可用。
 - 工具动作受 pytest allowlist 与护栏策略限制，高风险动作不会执行。

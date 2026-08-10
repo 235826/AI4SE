@@ -42,4 +42,3 @@
 - result
 - human intervention
 - lesson
-

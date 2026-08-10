@@ -233,7 +233,8 @@ Task 10 使用 `superpowers:using-superpowers` 确认技能流程，并使用
 `AGENT_LOG.md`，并保留本文件已有的 brainstorming、计划与冷启动证据。
 
 README 明确记录：Mock 模式无需 key；OpenAI 模式优先读取 keyring，`.env` 仅作为明文开发回退；
-`auth status` 不打印明文 key；支持本地 editable 安装、Docker 命令和 v1 的 Python + pytest 已知限制。
+`auth status` 不打印明文 key；OpenAI provider 当前仍是离线占位实现；Docker 命令属于 Task 11
+完成后的计划，当前分发文件尚未完成；同时记录本地 editable 安装和 v1 的 Python + pytest 已知限制。
 
 后续任务必须在 `AGENT_LOG.md` 追加时间戳、task number、skill、prompt/context、result、human
 intervention 和 lesson，不得记录真实凭据。
