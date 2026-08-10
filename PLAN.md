@@ -862,6 +862,8 @@ git commit -m "feat: add agent loop"
 
 ### Task 9: argparse CLI
 
+完成提交：`1a4bb9d`
+
 **Files:**
 - Modify: `pyproject.toml`
 - Create: `src/patchpilot/__main__.py`
@@ -873,7 +875,7 @@ git commit -m "feat: add agent loop"
 - Produces: `build_parser() -> argparse.ArgumentParser`
 - Produces: `main(argv: list[str] | None = None) -> int`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_cli.py
@@ -898,23 +900,23 @@ def test_auth_status_does_not_print_key(monkeypatch, capsys):
     assert "sk-" not in captured.out
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_cli.py -v`
 
 Expected: FAIL with `ModuleNotFoundError: No module named 'patchpilot.cli'`.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Implement `run` and `auth` subcommands. Add `[project.scripts] patchpilot = "patchpilot.cli:main"` to `pyproject.toml`. Create `src/patchpilot/__main__.py` so `python -m patchpilot` imports `patchpilot.cli.main` only after Task 9 creates `cli.py`. `run` creates `GuardrailPolicy`, `MemoryStore`, `ToolDispatcher`, `MockLLM([Action("run_tests", {"command": args.test_cmd})])` for default mock demo, then invokes `AgentLoop`.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/test_cli.py -v`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add pyproject.toml src/patchpilot/__main__.py src/patchpilot/cli.py tests/test_cli.py
