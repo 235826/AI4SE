@@ -607,6 +607,8 @@ git commit -m "feat: add llm provider abstraction"
 
 ### Task 6: Credential Manager
 
+完成提交：`d9d0a7d`
+
 **Files:**
 - Create: `src/patchpilot/credentials.py`
 - Test: `tests/test_credentials.py`
@@ -618,7 +620,7 @@ git commit -m "feat: add llm provider abstraction"
 - Produces: `CredentialManager.clear() -> None`
 - Produces: `CredentialManager.get_key() -> str | None`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_credentials.py
@@ -653,23 +655,23 @@ def test_status_set_and_clear_without_printing_key(capsys):
     assert "sk-test-secret" not in captured.err
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_credentials.py -v`
 
 Expected: FAIL with `ModuleNotFoundError: No module named 'patchpilot.credentials'`.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Create `src/patchpilot/credentials.py` with injectable keyring backend. Use username `"openai-api-key"`. `get_key()` checks keyring first, then `OPENAI_API_KEY` from `.env` loaded with `dotenv.load_dotenv()`.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/test_credentials.py -v`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/patchpilot/credentials.py tests/test_credentials.py
