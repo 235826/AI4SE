@@ -682,6 +682,8 @@ git commit -m "feat: add credential manager"
 
 ### Task 7: Tool Dispatcher
 
+完成提交：`41e45e7`
+
 **Files:**
 - Create: `src/patchpilot/tools.py`
 - Test: `tests/test_tools.py`
@@ -691,7 +693,7 @@ git commit -m "feat: add credential manager"
 - Produces: `ToolDispatcher(workspace: Path, guardrails: GuardrailPolicy, memory: MemoryStore | None = None, timeout_seconds: int = 20)`
 - Produces: `ToolDispatcher.dispatch(action: Action) -> ToolResult`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_tools.py
@@ -744,13 +746,13 @@ def test_apply_patch_applies_single_file_unified_diff(tmp_path: Path):
     assert result.changed_files == ["sample.py"]
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_tools.py -v`
 
 Expected: FAIL with `ModuleNotFoundError: No module named 'patchpilot.tools'`.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Create `src/patchpilot/tools.py` with:
 
@@ -761,13 +763,13 @@ Create `src/patchpilot/tools.py` with:
 - `remember`: call `MemoryStore.append(kind, content, source="agent", run_id)`.
 - `finish`: return `ToolResult("finish", True, 0, "finish", "", [], None)`.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/test_tools.py -v`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/patchpilot/tools.py tests/test_tools.py
