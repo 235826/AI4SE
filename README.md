@@ -39,16 +39,15 @@ patchpilot auth clear
 
 ## Docker
 
-以下是 Task 11 完成分发文件后的计划命令。当前任务尚未创建 `Dockerfile` 和
-`.dockerignore`，因此当前不可构建：
+容器分发已支持以下构建和运行命令：
 
 ```bash
 docker build -t patchpilot .
 docker run --rm -it -v "$PWD:/workspace" patchpilot run --task "fix failing tests" --test-cmd "pytest"
 ```
 
-Task 11 完成后，容器内可以使用 Mock 模式而无需 key。使用 OpenAI provider 时，
-应通过安全的运行时凭据配置向容器提供 key，不要把真实凭据写入镜像或提交到仓库。
+容器内可以使用 Mock 模式而无需 key。使用 OpenAI provider 时，应通过安全的运行时
+凭据配置向容器提供 key；不要把真实凭据写入镜像构建上下文或提交到仓库。
 
 ## 已知限制
 
