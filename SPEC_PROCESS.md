@@ -223,3 +223,17 @@ v1 是否限制为六个核心模块：loop、LLM provider、tool dispatcher、g
 + 未知 action 默认按高风险拒绝，并计为一次无效 action。
 + v1 中风险 action 仅包括仍在 pytest allowlist 内、但会改变测试运行完整性的参数，例如 pytest --maxfail=1。
 ```
+
+## 8. Task 10 文档与分发记录
+
+Task 10 使用 `superpowers:using-superpowers` 确认技能流程，并使用
+`superpowers:verification-before-completion` 在提交前执行新鲜验证。按照
+`.superpowers/sdd/PLAN/task-10-brief.md`，先运行 documentation acceptance check；由于
+`README.md` 尚不存在，该检查以退出码 2 失败。随后新增中文 `README.md` 和
+`AGENT_LOG.md`，并保留本文件已有的 brainstorming、计划与冷启动证据。
+
+README 明确记录：Mock 模式无需 key；OpenAI 模式优先读取 keyring，`.env` 仅作为明文开发回退；
+`auth status` 不打印明文 key；支持本地 editable 安装、Docker 命令和 v1 的 Python + pytest 已知限制。
+
+后续任务必须在 `AGENT_LOG.md` 追加时间戳、task number、skill、prompt/context、result、human
+intervention 和 lesson，不得记录真实凭据。
