@@ -1116,9 +1116,7 @@ Use 1500-2500 Chinese characters. Cover:
 Mark completed tasks with `- [x]` only after corresponding commits exist. Add commit hash beside each completed task heading in this format:
 
 ```markdown
-### Task 1: 项目骨架与数据模型
-
-完成提交：`<commit-hash>`
+Task 1 完成提交：`<commit-hash>`
 ```
 
 - [ ] **Step 4: Run final verification**
