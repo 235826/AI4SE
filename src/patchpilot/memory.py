@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .models import MemoryEntry
+from .redaction import redact_text
 
 
 class MemoryStore:
@@ -15,10 +16,10 @@ class MemoryStore:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         entry = MemoryEntry(
             timestamp=datetime.now(timezone.utc).isoformat(),
-            kind=kind,
-            content=content,
-            source=source,
-            run_id=run_id,
+            kind=redact_text(kind),
+            content=redact_text(content),
+            source=redact_text(source),
+            run_id=redact_text(run_id),
         )
         with self.path.open("a", encoding="utf-8") as file:
             file.write(json.dumps(entry.__dict__) + "\n")

@@ -2,17 +2,16 @@ from __future__ import annotations
 
 import re
 import subprocess
+from collections.abc import Callable
 from pathlib import Path
 
-from patchpilot.guardrails import GuardrailPolicy
+from patchpilot.guardrails import GuardrailPolicy, RiskDecision
 from patchpilot.memory import MemoryStore
 from patchpilot.models import Action, ToolResult
+from patchpilot.redaction import redact_text
 
 
 _HUNK_HEADER = re.compile(r"^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@")
-_SENSITIVE_OUTPUT = re.compile(r"(?i)(authorization\s*:\s*bearer\s+\S+|sk-[a-z0-9_-]+|secret|token|key)")
-
-
 class ToolDispatcher:
     def __init__(
         self,
@@ -20,18 +19,27 @@ class ToolDispatcher:
         guardrails: GuardrailPolicy,
         memory: MemoryStore | None = None,
         timeout_seconds: int = 20,
+        approval_callback: Callable[[Action, RiskDecision], bool] | None = None,
     ):
         self.workspace = workspace.resolve()
         self.guardrails = guardrails
         self.memory = memory
         self.timeout_seconds = timeout_seconds
+        self.approval_callback = approval_callback
 
     def dispatch(self, action: Action) -> ToolResult:
         decision = self.guardrails.check_action(action)
         if not decision.allowed:
             return ToolResult(action.type, False, None, error=decision.reason, blocked=True)
         if decision.requires_approval:
-            return ToolResult(action.type, False, None, error="action requires approval", blocked=True)
+            if self.approval_callback is None:
+                return ToolResult(action.type, False, None, error="action requires approval", blocked=True)
+            try:
+                approved = self.approval_callback(action, decision)
+            except Exception:
+                approved = False
+            if not approved:
+                return ToolResult(action.type, False, None, error="action approval denied", blocked=True)
 
         try:
             handler = getattr(self, f"_{action.type}")
@@ -40,10 +48,21 @@ class ToolDispatcher:
 
         try:
             return handler(action.args)
-        except (OSError, ValueError, subprocess.TimeoutExpired) as error:
+        except subprocess.TimeoutExpired:
+            return ToolResult(
+                action.type,
+                False,
+                None,
+                error="tool execution timed out",
+                timed_out=True,
+            )
+        except (OSError, ValueError) as error:
             return ToolResult(action.type, False, None, error=self._safe_error(error))
 
     def _list_files(self, _: dict[str, object]) -> ToolResult:
+        return ToolResult("list_files", True, 0, "\n".join(self.visible_files()))
+
+    def visible_files(self, limit: int | None = None) -> list[str]:
         files: list[str] = []
         for path in self.workspace.rglob("*"):
             relative = path.relative_to(self.workspace)
@@ -51,7 +70,8 @@ class ToolDispatcher:
                 continue
             if path.is_file():
                 files.append(relative.as_posix())
-        return ToolResult("list_files", True, 0, "\n".join(sorted(files)))
+        ordered = sorted(files)
+        return ordered if limit is None else ordered[:limit]
 
     def _read_file(self, args: dict[str, object]) -> ToolResult:
         path = self._workspace_path(args.get("path"))
@@ -199,13 +219,10 @@ class ToolDispatcher:
 
     @staticmethod
     def _redact(text: str) -> str:
-        return "\n".join(
-            "[REDACTED]" if _SENSITIVE_OUTPUT.search(line) else line
-            for line in text.splitlines()
-        )
+        return redact_text(text)
 
     @staticmethod
     def _safe_error(error: Exception) -> str:
         if isinstance(error, subprocess.TimeoutExpired):
             return "tool execution timed out"
-        return str(error)
+        return redact_text(str(error))

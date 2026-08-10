@@ -93,8 +93,11 @@ class GuardrailPolicy:
                 continue
             if not self._is_allowed_test_target(part):
                 return RiskDecision(False, "high", f"command argument outside allowlist: {command}")
-        if self.interactive_approval and "--maxfail=1" in parts:
-            return RiskDecision(True, "medium", "pytest maxfail changes run behavior", True)
+        if "--maxfail=1" in parts:
+            reason = "pytest maxfail changes run behavior and requires approval"
+            if self.interactive_approval:
+                return RiskDecision(True, "medium", reason, True)
+            return RiskDecision(False, "medium", reason)
         return RiskDecision(True, "low", "pytest command allowed")
 
     def _is_allowed_test_target(self, target: str) -> bool:

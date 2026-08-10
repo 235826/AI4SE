@@ -21,6 +21,7 @@ class ToolResult:
     changed_files: list[str] = field(default_factory=list)
     error: str | None = None
     blocked: bool = False
+    timed_out: bool = False
 
 
 @dataclass(frozen=True)

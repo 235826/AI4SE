@@ -138,6 +138,16 @@ def test_medium_risk_requires_approval_only_when_enabled(tmp_path: Path):
     assert decision.requires_approval is True
 
 
+def test_medium_risk_is_blocked_without_interactive_approval(tmp_path: Path):
+    policy = GuardrailPolicy(workspace=tmp_path, interactive_approval=False)
+
+    decision = policy.check_action(Action("run_tests", {"command": "pytest --maxfail=1"}))
+
+    assert decision.allowed is False
+    assert decision.risk == "medium"
+    assert "approval" in decision.reason
+
+
 def test_unknown_action_is_rejected(tmp_path: Path):
     policy = GuardrailPolicy(workspace=tmp_path)
     decision = policy.check_action(Action(type="delete_everything", args={}))

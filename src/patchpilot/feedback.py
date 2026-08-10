@@ -25,6 +25,16 @@ def parse_pytest_result(result: ToolResult) -> Feedback:
     failed_tests = [_failed_nodeid(line) for line in _FAILED_TEST_PATTERN.findall(output)]
     passed = result.ok and not counts.get("failed", 0) and not counts.get("error", 0)
     summary = next((line.strip() for line in reversed(output.splitlines()) if line.strip()), "")
+    traceback_line = next(
+        (
+            line.strip().removeprefix("E").strip()
+            for line in output.splitlines()
+            if line.lstrip().startswith("E   ")
+        ),
+        "",
+    )
+    if traceback_line and traceback_line not in summary:
+        summary = f"{summary}; failure: {traceback_line}" if summary else traceback_line
     return Feedback("pytest", passed, failed_tests, counts, summary)
 
 

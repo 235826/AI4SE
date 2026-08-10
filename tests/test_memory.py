@@ -40,3 +40,15 @@ def test_recent_with_zero_limit_returns_empty(tmp_path: Path):
     store.append(kind="decision", content="one entry", source="user", run_id="r3")
 
     assert store.recent(limit=0) == []
+
+
+def test_append_redacts_secret_like_memory_content(tmp_path: Path):
+    path = tmp_path / "memory.jsonl"
+    store = MemoryStore(path)
+
+    entry = store.append("decision", "OPENAI_API_KEY=sk-memory-secret", "agent", "r1")
+
+    persisted = path.read_text(encoding="utf-8")
+    assert "sk-memory-secret" not in entry.content
+    assert "sk-memory-secret" not in persisted
+    assert "[REDACTED]" in persisted

@@ -104,6 +104,22 @@ def test_auth_set_reads_key_with_getpass(monkeypatch, capsys):
     assert "sk-test-key" not in captured.out
 
 
+def test_auth_clear_warns_when_dotenv_fallback_remains(monkeypatch, capsys):
+    class FakeManager:
+        def clear(self):
+            return ".env"
+
+    monkeypatch.setattr("patchpilot.cli.CredentialManager", FakeManager)
+
+    code = main(["auth", "clear"])
+    captured = capsys.readouterr()
+
+    assert code == 0
+    assert "keyring cleared" in captured.out
+    assert ".env fallback still configured" in captured.out
+    assert "cleared\n" != captured.out
+
+
 def test_module_entrypoint_shows_help_with_src_pythonpath():
     root = Path(__file__).resolve().parents[1]
     environment = os.environ | {"PYTHONPATH": str(root / "src")}

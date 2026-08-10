@@ -7,7 +7,7 @@ from pathlib import Path
 
 from patchpilot.agent import AgentLoop
 from patchpilot.credentials import CredentialManager
-from patchpilot.guardrails import GuardrailPolicy
+from patchpilot.guardrails import GuardrailPolicy, RiskDecision
 from patchpilot.llm import MockLLM, OpenAILLM
 from patchpilot.memory import MemoryStore
 from patchpilot.models import Action
@@ -54,8 +54,11 @@ def _run_auth(args: argparse.Namespace) -> int:
         manager.set_key(getpass.getpass("OpenAI API key: "))
         print("configured")
     else:
-        manager.clear()
-        print("cleared")
+        remaining_source = manager.clear()
+        if remaining_source:
+            print(f"keyring cleared but {remaining_source} fallback still configured")
+        else:
+            print("cleared")
     return 0
 
 
@@ -63,7 +66,8 @@ def _run_agent(args: argparse.Namespace) -> int:
     workspace = args.workspace.resolve()
     guardrails = GuardrailPolicy(workspace, interactive_approval=args.interactive_approval)
     memory = MemoryStore(workspace / ".patchpilot" / "memory.jsonl")
-    dispatcher = ToolDispatcher(workspace, guardrails, memory)
+    approval_callback = _prompt_for_approval if args.interactive_approval else None
+    dispatcher = ToolDispatcher(workspace, guardrails, memory, approval_callback=approval_callback)
     if args.provider == "openai":
         api_key = CredentialManager().get_key()
         if not api_key:
@@ -75,3 +79,8 @@ def _run_agent(args: argparse.Namespace) -> int:
     status = AgentLoop(llm, dispatcher, max_steps=args.max_steps).run(args.task, args.test_cmd)
     print(status.reason)
     return 0 if status.ok else 1
+
+
+def _prompt_for_approval(action: Action, decision: RiskDecision) -> bool:
+    answer = input(f"Approve medium-risk {action.type} ({decision.reason})? [y/N] ")
+    return answer.strip().lower() in {"y", "yes"}

@@ -1,3 +1,4 @@
+import subprocess
 from pathlib import Path
 
 from patchpilot.agent import AgentLoop
@@ -78,3 +79,121 @@ def test_loop_reports_max_steps_and_auditable_event_payload(tmp_path: Path):
         "action_args": {},
         "tool": {"ok": True, "error": None, "blocked": False},
     }
+
+
+def test_initial_context_contains_workspace_summary_and_recent_memory(tmp_path: Path):
+    (tmp_path / "sample.py").write_text("value = 1\n", encoding="utf-8")
+    memory = MemoryStore(tmp_path / ".patchpilot" / "memory.jsonl")
+    memory.append("decision", "keep changes focused", "user", "earlier")
+
+    class CapturingLLM:
+        def __init__(self):
+            self.context = None
+
+        def next_action(self, context):
+            self.context = context
+            return Action("finish", {"ok": True})
+
+    llm = CapturingLLM()
+    dispatcher = ToolDispatcher(tmp_path, GuardrailPolicy(tmp_path), memory)
+    AgentLoop(llm, dispatcher, run_id="r1").run("inspect", "pytest")
+
+    assert llm.context["workspace"]["root"] == str(tmp_path.resolve())
+    assert "sample.py" in llm.context["workspace"]["files"]
+    assert llm.context["memory"][-1]["content"] == "keep changes focused"
+
+
+def test_context_aware_llm_changes_action_after_failed_feedback(tmp_path: Path):
+    (tmp_path / "test_failure.py").write_text(
+        "def test_failure():\n    assert False\n", encoding="utf-8"
+    )
+
+    class FeedbackAwareLLM:
+        def __init__(self):
+            self.calls = 0
+            self.observed_failure = False
+
+        def next_action(self, context):
+            self.calls += 1
+            if self.calls == 1:
+                return Action("run_tests", {"command": "pytest -q"})
+            self.observed_failure = bool(
+                context["feedback"]["passed"] is False
+                and context["last_result"]["ok"] is False
+                and context["feedback"]["failed_tests"]
+            )
+            return Action("finish", {"ok": self.observed_failure})
+
+    llm = FeedbackAwareLLM()
+    dispatcher = ToolDispatcher(tmp_path, GuardrailPolicy(tmp_path))
+
+    status = AgentLoop(llm, dispatcher, run_id="r1").run("react", "pytest -q")
+
+    assert status.ok is True
+    assert llm.observed_failure is True
+
+
+def test_loop_writes_run_summary_memory_on_exit(tmp_path: Path):
+    memory = MemoryStore(tmp_path / ".patchpilot" / "memory.jsonl")
+    dispatcher = ToolDispatcher(tmp_path, GuardrailPolicy(tmp_path), memory)
+
+    status = AgentLoop(MockLLM([Action("finish", {"ok": True})]), dispatcher, run_id="r9").run(
+        "stop", "pytest"
+    )
+
+    summary = memory.recent(1)[0]
+    assert status.ok is True
+    assert summary.kind == "run_summary"
+    assert summary.run_id == "r9"
+    assert "finish" in summary.content
+
+
+def test_loop_stops_with_tool_timeout_reason(tmp_path: Path, monkeypatch):
+    def raise_timeout(*args, **kwargs):
+        raise subprocess.TimeoutExpired("pytest", 1)
+
+    monkeypatch.setattr("patchpilot.tools.subprocess.run", raise_timeout)
+    loop = make_loop(tmp_path, [Action("run_tests", {"command": "pytest"})])
+
+    status = loop.run("timeout", "pytest")
+
+    assert status == RunStatus(False, "tool_timeout", 1)
+
+
+def test_loop_stops_after_two_consecutive_invalid_actions(tmp_path: Path):
+    class InvalidLLM:
+        def next_action(self, context):
+            raise ValueError("invalid action schema")
+
+    dispatcher = ToolDispatcher(tmp_path, GuardrailPolicy(tmp_path))
+    loop = AgentLoop(InvalidLLM(), dispatcher, max_steps=4, run_id="r1")
+
+    status = loop.run("invalid", "pytest")
+
+    assert status == RunStatus(False, "invalid_actions", 2)
+    assert [event.event_type for event in loop.events] == ["invalid_action", "invalid_action"]
+
+
+def test_run_event_redacts_secret_values_in_remember_and_patch_args(tmp_path: Path):
+    target = tmp_path / "sample.py"
+    target.write_text("value = 'old'\n", encoding="utf-8")
+    memory = MemoryStore(tmp_path / ".patchpilot" / "memory.jsonl")
+    patch = """--- a/sample.py
++++ b/sample.py
+@@ -1 +1 @@
+-value = 'old'
++value = 'sk-patch-secret'
+"""
+    actions = [
+        Action("remember", {"kind": "note", "content": "api_token=memory-secret", "run_id": "r1"}),
+        Action("apply_patch", {"patch": patch}),
+    ]
+    dispatcher = ToolDispatcher(tmp_path, GuardrailPolicy(tmp_path), memory)
+    loop = AgentLoop(MockLLM(actions), dispatcher, max_steps=2, run_id="r1")
+
+    loop.run("redact", "pytest")
+
+    payloads = repr([event.payload for event in loop.events])
+    assert "memory-secret" not in payloads
+    assert "sk-patch-secret" not in payloads
+    assert "[REDACTED]" in payloads

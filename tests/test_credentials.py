@@ -76,3 +76,18 @@ def test_clear_ignores_missing_key():
 
 def test_clear_ignores_unavailable_keyring():
     CredentialManager(keyring_backend=UnavailableKeyring()).clear()
+
+
+def test_clear_reports_dotenv_fallback_and_status_stays_configured(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    (tmp_path / ".env").write_text("OPENAI_API_KEY=sk-dotenv-fallback\n", encoding="utf-8")
+    fake = FakeKeyring()
+    fake.value = "sk-keyring-value"
+    manager = CredentialManager(keyring_backend=fake)
+
+    remaining_source = manager.clear()
+
+    assert remaining_source == ".env"
+    assert manager.status() is True
+    assert manager.get_key() == "sk-dotenv-fallback"

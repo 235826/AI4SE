@@ -77,6 +77,48 @@ def test_remember_writes_memory(tmp_path: Path):
     assert memory.recent(1)[0].content == "use pytest"
 
 
+def test_interactive_approval_callback_allows_medium_risk_action(tmp_path: Path, monkeypatch):
+    approved = []
+
+    class Completed:
+        returncode = 0
+        stdout = "1 passed in 0.01s"
+        stderr = ""
+
+    monkeypatch.setattr("patchpilot.tools.subprocess.run", lambda *args, **kwargs: Completed())
+    dispatcher = ToolDispatcher(
+        tmp_path,
+        GuardrailPolicy(tmp_path, interactive_approval=True),
+        approval_callback=lambda action, decision: approved.append((action, decision)) or True,
+    )
+
+    result = dispatcher.dispatch(Action("run_tests", {"command": "pytest --maxfail=1"}))
+
+    assert result.ok is True
+    assert len(approved) == 1
+
+
+def test_interactive_approval_callback_rejection_blocks_action(tmp_path: Path, monkeypatch):
+    called = False
+
+    def should_not_run(*args, **kwargs):
+        nonlocal called
+        called = True
+
+    monkeypatch.setattr("patchpilot.tools.subprocess.run", should_not_run)
+    dispatcher = ToolDispatcher(
+        tmp_path,
+        GuardrailPolicy(tmp_path, interactive_approval=True),
+        approval_callback=lambda action, decision: False,
+    )
+
+    result = dispatcher.dispatch(Action("run_tests", {"command": "pytest --maxfail=1"}))
+
+    assert result.blocked is True
+    assert "denied" in result.error
+    assert called is False
+
+
 def test_apply_patch_applies_single_file_unified_diff(tmp_path: Path):
     target = tmp_path / "sample.py"
     target.write_text("x = 1\n", encoding="utf-8")

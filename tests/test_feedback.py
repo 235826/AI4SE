@@ -46,3 +46,22 @@ def test_timeout_feedback_is_not_passed():
     assert feedback.passed is False
     assert feedback.kind == "pytest"
     assert "timeout" in feedback.summary
+
+
+def test_failure_summary_includes_brief_traceback_context():
+    output = """============================= test session starts ==============================
+_______________________________ test_total ________________________________
+    def test_total():
+>       assert total(2, 2) == 5
+E       assert 4 == 5
+tests/test_math.py:7: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_math.py::test_total - assert 4 == 5
+1 failed in 0.10s
+"""
+    result = ToolResult("run_tests", False, 1, output, "", [], "test command failed")
+
+    feedback = parse_pytest_result(result)
+
+    assert "1 failed in 0.10s" in feedback.summary
+    assert "assert 4 == 5" in feedback.summary
