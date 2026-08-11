@@ -31,10 +31,9 @@
 - 红灯证据：新增定向套件初次运行 `17 failed, 64 passed`；原 README Docker 运行示例退出码为 `1`。
 - 修复后定向套件 `81 passed`，首次全量 `make test` 为 `85 passed`。最终 Docker、secret scan、diff check 和提交证据记录在 `.superpowers/sdd/PLAN/final-fix-report.md`。
 
-## PR 工作流补救
+## PR 与机制演示记录
 
-- 2026-08-11 复查 GitHub 仓库提交状态时发现：Task 1-13 虽然保留了分步提交、worktree、subagent、review 与验证记录，但没有在 GitHub 上创建对应 PR，未完整满足作业关于 PR 工作流的过程要求。
-- 不重写历史、不伪造既有 PR。后续补救采用真实分支和真实 PR 记录缺口，并把新增交付物通过 PR 审查入口提交。
 - PR #1：`https://github.com/235826/AI4SE/pull/1`，分支 `mechanism-demo-docs`，提交 `38abaa0`，补充 `MECHANISM_DEMO.md` 与 README 入口，明确作业 A.6 的机制演示命令。
 - PR #1 验证：机制演示定向测试 `3 passed`；全量 `make test` 为 `85 passed`。
-- 本条记录所在分支 `pr-process-remediation` 用于补充 PR 工作流补救说明；该分支自身也通过 PR 提交，作为后续不再直接向 `main` 推送的过程证据。
+- PR #2：`https://github.com/235826/AI4SE/pull/2`，提交 `3c2ba39`，补充 PR 与机制演示过程记录。
+- PR #2 验证：全量 `make test` 为 `85 passed`。
