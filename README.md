@@ -21,6 +21,10 @@ patchpilot run --task "fix failing tests" --test-cmd "pytest"
 
 运行时可用 `--workspace` 指定目标工作区，也可用 `--max-steps` 限制 agent loop 的步数。
 
+## 机制演示
+
+作业 A.6 要求的机制演示见 [MECHANISM_DEMO.md](MECHANISM_DEMO.md)。演示使用 mock / stub LLM 和确定性测试覆盖：危险动作拦截、失败反馈回灌后改变下一步动作、以及 HITL 治理行为。
+
 ## OpenAI 模式与凭据
 
 OpenAI 模式会先从系统 keyring 读取 key；只有 keyring 不可用或没有 key 时，才把当前目录 `.env` 中的 `OPENAI_API_KEY` 作为明文开发回退。生产环境不应把 key 写入 `.env`、源代码或日志。
