@@ -238,3 +238,36 @@ README 明确记录：Mock 模式无需 key；OpenAI 模式优先读取 keyring�
 
 后续任务必须在 `AGENT_LOG.md` 追加时间戳、task number、skill、prompt/context、result、human
 intervention 和 lesson，不得记录真实凭据。
+
+## 9. PR 工作流补救记录
+
+2026-08-11 对最终提交状态做复查时，发现仓库已经有连续的任务提交、worktree/subagent 日志、
+TDD 与 review 证据，但 GitHub 上没有实际 PR 记录。作业要求“每个 worktree 对应一个 PR”，
+因此这属于过程证据缺口，不能在事后改写为已经发生过的 PR 工作流。
+
+补救原则：
+
+- 不 force push、不重写 `main` 历史。
+- 不伪造旧 PR，不把后补 PR 描述成早期开发时已经存在。
+- 对新增交付物和过程说明使用真实分支、真实提交、真实 PR。
+- 在文档中如实说明前期执行偏差和后续修正方式。
+
+已执行补救：
+
+- 创建分支 `mechanism-demo-docs`，提交 `38abaa0`。
+- 创建 PR #1：`https://github.com/235826/AI4SE/pull/1`。
+- PR #1 补充 `MECHANISM_DEMO.md`，把作业 A.6 的三类机制演示从测试中显式暴露出来：
+  - 治理护栏拦截危险动作。
+  - 失败反馈回灌后改变下一步动作。
+  - HITL 治理拒绝中风险动作。
+- PR #1 的验证命令：
+
+```bash
+pytest tests/test_guardrails.py::test_blocks_dangerous_test_command tests/test_agent.py::test_context_aware_llm_changes_action_after_failed_feedback tests/test_tools.py::test_interactive_approval_callback_rejection_blocks_action -q
+make test
+```
+
+后续要求：
+
+- 此补救说明通过 `pr-process-remediation` 分支提交，并创建单独 PR。
+- 之后任何提交均使用 branch -> PR -> merge 流程，不再直接推送到 `main`。
